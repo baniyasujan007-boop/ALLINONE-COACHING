@@ -1,141 +1,118 @@
-.DS_Store
+# -----------------------------
+# Environment Files And Secrets
+# Ignore real environment files and credential material.
+# Keep committed templates such as backend/.env.example.
+# -----------------------------
 .env
 .env.*
+!.env.example
+!.env.sample
+!.env.template
+
+backend/.env
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+
+# -----------------------------
+# Node.js / Express Backend
+# Ignore installed packages, runtime output, and local upload data.
+# Do not ignore package manifests or lockfiles.
+# -----------------------------
 node_modules/
+backend/node_modules/
+
+backend/uploads/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------
+# Flutter / Dart
+# Ignore Flutter tool state and generated build artifacts for this app.
+# Keep source, pubspec files, platform wrappers, and checked-in app assets.
+# -----------------------------
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/.pub/
+flutter/build/
+flutter/**/build/
+
+flutter/android/.gradle/
+flutter/android/local.properties
+flutter/android/captures/
+
+flutter/ios/Pods/
+flutter/ios/.symlinks/
+flutter/ios/Flutter/ephemeral/
+flutter/ios/Flutter/App.framework
+flutter/ios/Flutter/Flutter.framework
+flutter/ios/Flutter/Generated.xcconfig
+flutter/ios/Flutter/flutter_export_environment.sh
+flutter/ios/Flutter/Flutter.podspec
+flutter/ios/Flutter/.last_build_id
+
+flutter/macos/Pods/
+flutter/macos/Flutter/ephemeral/
+
+# Desktop plugin registrants and generated CMake glue are generated locally.
+flutter/linux/flutter/generated_plugin_registrant.cc
+flutter/linux/flutter/generated_plugin_registrant.h
+flutter/linux/flutter/generated_plugins.cmake
+flutter/windows/flutter/generated_plugin_registrant.cc
+flutter/windows/flutter/generated_plugin_registrant.h
+flutter/windows/flutter/generated_plugins.cmake
+
+# -----------------------------
+# Build Output, Logs, And Temp Files
+# Ignore transient output from local builds, tests, and tooling.
+# -----------------------------
 build/
 dist/
 coverage/
+cache/
+.cache/
+.tmp/
+tmp/
+*.log
+*.tmp
+*.temp
+*.pid
+*.pid.lock
+*.seed
+
+# -----------------------------
+# OS / IDE Files
+# Ignore machine-specific editor settings and OS metadata.
+# -----------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 .idea/
-.vscode/
-
-backend/node_modules/
-backend/.env
-backend/uploads/
-
-flutter/.dart_tool/
 flutter/.idea/
-flutter/build/
-
-# Miscellaneous
-*.class
-*.lock
-*.log
-*.pyc
+.vscode/
+*.iml
+*.suo
+*.user
+*.userossc
 *.swp
+*.swo
+
+# -----------------------------
+# Misc Local Artifacts
+# Ignore merge leftovers and local history files.
+# -----------------------------
+*.orig
+.history/
 .buildlog/
-.history
-
-# Flutter repo-specific
-/bin/cache/
-/bin/internal/bootstrap.bat
-/bin/internal/bootstrap.sh
-/bin/mingit/
-/dev/benchmarks/mega_gallery/
-/dev/bots/.recipe_deps
-/dev/bots/android_tools/
-/dev/devicelab/ABresults*.json
-/dev/docs/doc/
-/dev/docs/flutter.docs.zip
-/dev/docs/lib/
-/dev/docs/pubspec.yaml
-/dev/integration_tests/**/xcuserdata
-/dev/integration_tests/**/Pods
-/packages/flutter/coverage/
-version
-analysis_benchmark.json
-
-# Packages file containing multi-root paths
-.packages.generated
-
-# Flutter/Dart/Pub related
-**/doc/api/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-**/generated_plugin_registrant.dart
-.packages
-.pub-preload-cache/
-.pub/
-flutter_*.png
-linked_*.ds
-unlinked.ds
-unlinked_spec.ds
-
-# Android related
-**/android/**/gradle-wrapper.jar
-.gradle/
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-*.jks
-
-# iOS/XCode related
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/ephemeral
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-
-# macOS
-**/Flutter/ephemeral/
-**/Pods/
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-**/macos/Flutter/ephemeral
-**/xcuserdata/
-
-# Windows
-**/windows/flutter/generated_plugin_registrant.cc
-**/windows/flutter/generated_plugin_registrant.h
-**/windows/flutter/generated_plugins.cmake
-
-# Linux
-**/linux/flutter/generated_plugin_registrant.cc
-**/linux/flutter/generated_plugin_registrant.h
-**/linux/flutter/generated_plugins.cmake
-
-# Flutter platform build artifacts
-flutter/android/.gradle/
-flutter/android/app/debug/
-flutter/android/app/profile/
-flutter/android/app/release/
-flutter/ios/Pods/
-flutter/ios/.symlinks/
-flutter/macos/Pods/
-
-# Symbols
-app.*.symbols
-
-# Exceptions to above rules
-!**/ios/**/default.mode1v3
-!**/ios/**/default.mode2v3
-!**/ios/**/default.pbxuser
-!**/ios/**/default.perspectivev3
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-!/dev/ci/**/Gemfile.lock
