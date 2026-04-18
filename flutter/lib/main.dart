@@ -19,6 +19,7 @@ Future<void> main() async {
   await ProgressService.instance.restore();
   final AppState appState = AppState();
   await appState.restorePreferences();
+  await appState.recordDailyEngagement();
   runApp(AllInOneCoachingApp(appState: appState));
 }
 

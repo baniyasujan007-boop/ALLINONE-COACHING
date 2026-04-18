@@ -6,11 +6,21 @@ import '../models/course.dart' as api;
 import '../models/course_model.dart';
 import '../services/auth_service.dart';
 import '../services/course_service.dart';
+import '../services/notification_service.dart';
 
 class AppState extends ChangeNotifier {
   static const String _darkModeKey = 'dark_mode';
+  static const String _dailyRemindersKey = 'daily_reminders_enabled';
+  static const String _reminderHourKey = 'daily_reminder_hour';
+  static const String _lastActiveDayKey = 'last_active_day';
+  static const String _streakCountKey = 'streak_count';
+  static const String _longestStreakKey = 'longest_streak';
 
   bool _darkMode = false;
+  bool _dailyRemindersEnabled = true;
+  int _reminderHour = 19;
+  int _streakCount = 1;
+  int _longestStreak = 1;
   String _userName = 'Student';
   bool _authLoading = false;
   bool _coursesLoading = false;
@@ -20,6 +30,10 @@ class AppState extends ChangeNotifier {
   final List<CourseItem> _courses = <CourseItem>[];
 
   bool get darkMode => _darkMode;
+  bool get dailyRemindersEnabled => _dailyRemindersEnabled;
+  int get reminderHour => _reminderHour;
+  int get streakCount => _streakCount;
+  int get longestStreak => _longestStreak;
   String get userName => _userName;
   bool get authLoading => _authLoading;
   bool get coursesLoading => _coursesLoading;
@@ -91,6 +105,58 @@ class AppState extends ChangeNotifier {
   Future<void> restorePreferences() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     _darkMode = prefs.getBool(_darkModeKey) ?? false;
+    _dailyRemindersEnabled = prefs.getBool(_dailyRemindersKey) ?? true;
+    _reminderHour = prefs.getInt(_reminderHourKey) ?? 19;
+    _streakCount = prefs.getInt(_streakCountKey) ?? 1;
+    _longestStreak = prefs.getInt(_longestStreakKey) ?? _streakCount;
+    await NotificationService.instance.syncDailyReminder(
+      enabled: _dailyRemindersEnabled,
+      hour: _reminderHour,
+      requestPermission: false,
+    );
+    notifyListeners();
+  }
+
+  Future<void> recordDailyEngagement() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final String todayIso = today.toIso8601String();
+    final String? lastActiveRaw = prefs.getString(_lastActiveDayKey);
+    final DateTime? lastActive = lastActiveRaw == null
+        ? null
+        : DateTime.tryParse(lastActiveRaw);
+
+    if (lastActive == null) {
+      _streakCount = 1;
+    } else {
+      final DateTime previousDay = DateTime(
+        today.year,
+        today.month,
+        today.day - 1,
+      );
+      final DateTime normalizedLast = DateTime(
+        lastActive.year,
+        lastActive.month,
+        lastActive.day,
+      );
+      if (normalizedLast == today) {
+        return;
+      }
+      if (normalizedLast == previousDay) {
+        _streakCount += 1;
+      } else {
+        _streakCount = 1;
+      }
+    }
+
+    if (_streakCount > _longestStreak) {
+      _longestStreak = _streakCount;
+    }
+
+    await prefs.setString(_lastActiveDayKey, todayIso);
+    await prefs.setInt(_streakCountKey, _streakCount);
+    await prefs.setInt(_longestStreakKey, _longestStreak);
     notifyListeners();
   }
 
@@ -258,6 +324,38 @@ class AppState extends ChangeNotifier {
     _darkMode = value;
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_darkModeKey, value);
+    notifyListeners();
+  }
+
+  Future<void> toggleDailyReminders(bool value) async {
+    if (_dailyRemindersEnabled == value) {
+      return;
+    }
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (value) {
+      await NotificationService.instance.syncDailyReminder(
+        enabled: true,
+        hour: _reminderHour,
+        requestPermission: true,
+      );
+    } else {
+      await NotificationService.instance.cancelDailyReminder();
+    }
+    _dailyRemindersEnabled = value;
+    await prefs.setBool(_dailyRemindersKey, value);
+    notifyListeners();
+  }
+
+  Future<void> updateReminderHour(int value) async {
+    if (_reminderHour == value) {
+      return;
+    }
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (_dailyRemindersEnabled) {
+      await NotificationService.instance.scheduleDailyReminder(hour: value);
+    }
+    _reminderHour = value;
+    await prefs.setInt(_reminderHourKey, value);
     notifyListeners();
   }
 
