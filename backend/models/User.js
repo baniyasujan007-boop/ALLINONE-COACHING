@@ -51,6 +51,17 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      uppercase: true,
+      trim: true,
+    },
+    firstPaidPurchaseAt: {
+      type: Date,
+      default: null,
+    },
     enrolledCourses: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -95,6 +106,43 @@ const userSchema = new mongoose.Schema(
         accessExpiresAt: {
           type: Date,
           default: null,
+        },
+        originalAmount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        couponCode: {
+          type: String,
+          default: '',
+          trim: true,
+          uppercase: true,
+        },
+        couponDiscount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        referralCode: {
+          type: String,
+          default: '',
+          trim: true,
+          uppercase: true,
+        },
+        referralDiscount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        referredByUserId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          default: null,
+        },
+        referrerRewardAmount: {
+          type: Number,
+          default: 0,
+          min: 0,
         },
       },
     ],

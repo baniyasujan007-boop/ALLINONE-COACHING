@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -18,6 +19,7 @@ class ApiException implements Exception {
 class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
+  static const Duration _requestTimeout = Duration(seconds: 15);
 
   String? _token;
 
@@ -70,9 +72,33 @@ class ApiClient {
     throw ApiException(message, statusCode: response.statusCode);
   }
 
+  String _networkErrorMessage() {
+    final StringBuffer message = StringBuffer(
+      'Cannot reach the backend server at ${AppConfig.baseUrl}.',
+    );
+    if (AppConfig.baseUrl.contains('10.0.2.2')) {
+      message.write(
+        ' If you are using a physical phone, 10.0.2.2 only works on the Android emulator. Run the app with API_BASE_URL set to your computer LAN IP, for example http://192.168.x.x:5001/api.',
+      );
+    } else {
+      message.write(
+        ' Make sure your backend is running and your phone and computer are on the same Wi-Fi.',
+      );
+    }
+    return message.toString();
+  }
+
   Future<dynamic> get(String path, {bool auth = false}) async {
-    final response = await http.get(_uri(path), headers: _headers(auth: auth));
-    return _handleResponse(response);
+    try {
+      final response = await http
+          .get(_uri(path), headers: _headers(auth: auth))
+          .timeout(_requestTimeout);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage());
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage());
+    }
   }
 
   Future<dynamic> post(
@@ -80,12 +106,20 @@ class ApiClient {
     Map<String, dynamic> data, {
     bool auth = false,
   }) async {
-    final response = await http.post(
-      _uri(path),
-      headers: _headers(auth: auth),
-      body: jsonEncode(data),
-    );
-    return _handleResponse(response);
+    try {
+      final response = await http
+          .post(
+            _uri(path),
+            headers: _headers(auth: auth),
+            body: jsonEncode(data),
+          )
+          .timeout(_requestTimeout);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage());
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage());
+    }
   }
 
   Future<dynamic> put(
@@ -93,20 +127,33 @@ class ApiClient {
     Map<String, dynamic> data, {
     bool auth = false,
   }) async {
-    final response = await http.put(
-      _uri(path),
-      headers: _headers(auth: auth),
-      body: jsonEncode(data),
-    );
-    return _handleResponse(response);
+    try {
+      final response = await http
+          .put(
+            _uri(path),
+            headers: _headers(auth: auth),
+            body: jsonEncode(data),
+          )
+          .timeout(_requestTimeout);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage());
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage());
+    }
   }
 
   Future<dynamic> delete(String path, {bool auth = false}) async {
-    final response = await http.delete(
-      _uri(path),
-      headers: _headers(auth: auth),
-    );
-    return _handleResponse(response);
+    try {
+      final response = await http
+          .delete(_uri(path), headers: _headers(auth: auth))
+          .timeout(_requestTimeout);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage());
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage());
+    }
   }
 
   Future<dynamic> uploadFile(
@@ -116,16 +163,22 @@ class ApiClient {
     String fieldName = 'file',
     bool auth = false,
   }) async {
-    final request = http.MultipartRequest('POST', _uri(path));
-    if (auth && _token != null) {
-      request.headers['Authorization'] = 'Bearer $_token';
-    }
-    request.files.add(
-      http.MultipartFile.fromBytes(fieldName, bytes, filename: filename),
-    );
+    try {
+      final request = http.MultipartRequest('POST', _uri(path));
+      if (auth && _token != null) {
+        request.headers['Authorization'] = 'Bearer $_token';
+      }
+      request.files.add(
+        http.MultipartFile.fromBytes(fieldName, bytes, filename: filename),
+      );
 
-    final streamed = await request.send();
-    final response = await http.Response.fromStream(streamed);
-    return _handleResponse(response);
+      final streamed = await request.send().timeout(_requestTimeout);
+      final response = await http.Response.fromStream(streamed);
+      return _handleResponse(response);
+    } on TimeoutException {
+      throw ApiException(_networkErrorMessage());
+    } on http.ClientException {
+      throw ApiException(_networkErrorMessage());
+    }
   }
 }

@@ -31,20 +31,30 @@ class AdminPaymentRecord {
     required this.courseId,
     required this.courseTitle,
     required this.amount,
+    required this.originalAmount,
     required this.paymentMethod,
     required this.billingCycle,
     required this.status,
     required this.paidAt,
+    this.couponCode = '',
+    this.couponDiscount = 0,
+    this.referralCode = '',
+    this.referralDiscount = 0,
     this.accessExpiresAt,
   });
 
   final String courseId;
   final String courseTitle;
   final double amount;
+  final double originalAmount;
   final String paymentMethod;
   final String billingCycle;
   final String status;
   final String paidAt;
+  final String couponCode;
+  final double couponDiscount;
+  final String referralCode;
+  final double referralDiscount;
   final DateTime? accessExpiresAt;
 
   factory AdminPaymentRecord.fromApi(Map<String, dynamic> json) {
@@ -52,10 +62,21 @@ class AdminPaymentRecord {
       courseId: (json['courseId'] ?? '').toString(),
       courseTitle: (json['courseTitle'] ?? '').toString(),
       amount: (json['amount'] is num) ? (json['amount'] as num).toDouble() : 0,
+      originalAmount: (json['originalAmount'] is num)
+          ? (json['originalAmount'] as num).toDouble()
+          : ((json['amount'] is num) ? (json['amount'] as num).toDouble() : 0),
       paymentMethod: (json['paymentMethod'] ?? 'manual').toString(),
       billingCycle: (json['billingCycle'] ?? '').toString(),
       status: (json['status'] ?? 'success').toString(),
       paidAt: (json['paidAt'] ?? '').toString(),
+      couponCode: (json['couponCode'] ?? '').toString(),
+      couponDiscount: (json['couponDiscount'] is num)
+          ? (json['couponDiscount'] as num).toDouble()
+          : 0,
+      referralCode: (json['referralCode'] ?? '').toString(),
+      referralDiscount: (json['referralDiscount'] is num)
+          ? (json['referralDiscount'] as num).toDouble()
+          : 0,
       accessExpiresAt: (json['accessExpiresAt'] ?? '').toString().isEmpty
           ? null
           : DateTime.tryParse((json['accessExpiresAt'] ?? '').toString()),

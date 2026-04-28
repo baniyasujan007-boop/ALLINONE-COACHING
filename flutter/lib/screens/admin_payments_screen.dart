@@ -34,7 +34,7 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
       final List<_PaymentRow> payments = <_PaymentRow>[];
       for (final AdminUser user in users) {
         for (final AdminPaymentRecord payment in user.paymentHistory) {
-          if (payment.amount <= 0) {
+          if (payment.status == 'granted') {
             continue;
           }
           payments.add(
@@ -79,6 +79,14 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
       0,
       (double total, _PaymentRow item) => total + item.payment.amount,
     );
+    final double grossSales = _payments.fold(
+      0,
+      (double total, _PaymentRow item) => total + item.payment.originalAmount,
+    );
+    final int paidPayments = _payments
+        .where((_PaymentRow item) => item.payment.amount > 0)
+        .length;
+    final int freeUnlocks = _payments.length - paidPayments;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Payments Overview')),
@@ -103,15 +111,33 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
                       children: <Widget>[
                         Expanded(
                           child: _SummaryCard(
-                            title: 'Total Revenue',
+                            title: 'Collected Revenue',
                             value: 'Rs ${totalRevenue.toStringAsFixed(0)}',
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _SummaryCard(
-                            title: 'Payments',
-                            value: '${_payments.length}',
+                            title: 'Paid Payments',
+                            value: '$paidPayments',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: _SummaryCard(
+                            title: 'Gross Sales',
+                            value: 'Rs ${grossSales.toStringAsFixed(0)}',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _SummaryCard(
+                            title: 'Free Unlocks',
+                            value: '$freeUnlocks',
                           ),
                         ),
                       ],
@@ -146,6 +172,13 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
                                     ),
                                   ],
                                 ),
+                                if (row.payment.originalAmount >
+                                    row.payment.amount) ...<Widget>[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Original Rs ${row.payment.originalAmount.toStringAsFixed(0)}',
+                                  ),
+                                ],
                                 const SizedBox(height: 6),
                                 Text('${row.userName} • ${row.userEmail}'),
                                 const SizedBox(height: 6),
@@ -160,6 +193,21 @@ class _AdminPaymentsScreenState extends State<AdminPaymentsScreen> {
                                 if (row.payment.paidAt.isNotEmpty) ...<Widget>[
                                   const SizedBox(height: 4),
                                   Text('Paid at: ${row.payment.paidAt}'),
+                                ],
+                                if (row.payment.couponCode.isNotEmpty ||
+                                    row
+                                        .payment
+                                        .referralCode
+                                        .isNotEmpty) ...<Widget>[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    [
+                                      if (row.payment.couponCode.isNotEmpty)
+                                        'Coupon ${row.payment.couponCode}: -Rs ${row.payment.couponDiscount.toStringAsFixed(0)}',
+                                      if (row.payment.referralCode.isNotEmpty)
+                                        'Referral ${row.payment.referralCode}: -Rs ${row.payment.referralDiscount.toStringAsFixed(0)}',
+                                    ].join(' • '),
+                                  ),
                                 ],
                                 if (row.payment.accessExpiresAt !=
                                     null) ...<Widget>[

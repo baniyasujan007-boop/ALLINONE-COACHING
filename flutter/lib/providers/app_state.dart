@@ -283,6 +283,8 @@ class AppState extends ChangeNotifier {
     String courseId, {
     String paymentMethod = 'manual',
     String billingCycle = '',
+    String couponCode = '',
+    String referralCode = '',
   }) async {
     _authLoading = true;
     _authError = null;
@@ -292,6 +294,8 @@ class AppState extends ChangeNotifier {
       courseId,
       paymentMethod: paymentMethod,
       billingCycle: billingCycle,
+      couponCode: couponCode,
+      referralCode: referralCode,
     );
     if (error == null) {
       final String? refreshError = await AuthService.instance.refreshProfile();

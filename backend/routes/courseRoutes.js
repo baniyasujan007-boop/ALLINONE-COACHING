@@ -110,10 +110,13 @@ router.post(
   protect,
   [
     param('id').isMongoId().withMessage('Invalid course id'),
+    body('paymentMethod').optional().isString().withMessage('Invalid payment method'),
     body('billingCycle')
       .optional()
       .isIn(billingCycles)
       .withMessage('Invalid billing cycle'),
+    body('couponCode').optional().isString().withMessage('Invalid coupon code'),
+    body('referralCode').optional().isString().withMessage('Invalid referral code'),
     handleValidation,
   ],
   purchaseCourse

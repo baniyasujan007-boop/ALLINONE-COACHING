@@ -8,6 +8,7 @@ import '../widgets/glass_app_bar.dart';
 import '../widgets/user_avatar_button.dart';
 import '../pages/admin/admin_course_management_page.dart';
 import 'admin_payments_screen.dart';
+import 'admin_promotions_screen.dart';
 import 'admin_users_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
@@ -72,6 +73,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       builder: (_) => const AdminPaymentsScreen(),
                     ),
                   );
+                case _AdminMenuAction.promotions:
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AdminPromotionsScreen(),
+                    ),
+                  );
                 case _AdminMenuAction.logout:
                   await context.read<AppState>().logout();
                   if (!context.mounted) {
@@ -109,6 +116,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(Icons.payments_rounded),
                       title: Text('Payments'),
+                    ),
+                  ),
+                  PopupMenuItem<_AdminMenuAction>(
+                    value: _AdminMenuAction.promotions,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.local_offer_rounded),
+                      title: Text('Coupons & Referrals'),
                     ),
                   ),
                   PopupMenuItem<_AdminMenuAction>(
@@ -178,6 +193,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: AppDecorations.softNeu(context),
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(Icons.local_offer_rounded, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Manage checkout coupons, referral rewards, usage limits, and fraud controls.',
+                              style: TextStyle(
+                                color: Theme.of(context).hintColor,
+                              ),
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const AdminPromotionsScreen(),
+                              ),
+                            ),
+                            child: const Text('Open'),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     ...appState.courses.map(
                       (course) => Card(
@@ -237,7 +279,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 }
 
-enum _AdminMenuAction { users, courses, payments, logout }
+enum _AdminMenuAction { users, courses, payments, promotions, logout }
 
 class _AdminAppBarTitle extends StatelessWidget {
   const _AdminAppBarTitle();

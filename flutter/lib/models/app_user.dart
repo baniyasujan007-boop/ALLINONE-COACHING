@@ -1,4 +1,5 @@
 import 'course.dart';
+import 'promotion.dart';
 
 enum UserRole { student, admin }
 
@@ -7,27 +8,42 @@ class PaymentRecord {
     required this.courseId,
     required this.courseTitle,
     required this.amount,
+    required this.originalAmount,
     required this.paymentMethod,
     required this.billingCycle,
     required this.status,
     required this.paidAt,
     this.accessExpiresAt,
+    this.couponCode = '',
+    this.couponDiscount = 0,
+    this.referralCode = '',
+    this.referralDiscount = 0,
+    this.referrerRewardAmount = 0,
   });
 
   final String courseId;
   final String courseTitle;
   final double amount;
+  final double originalAmount;
   final String paymentMethod;
   final String billingCycle;
   final String status;
   final String paidAt;
   final DateTime? accessExpiresAt;
+  final String couponCode;
+  final double couponDiscount;
+  final String referralCode;
+  final double referralDiscount;
+  final double referrerRewardAmount;
 
   factory PaymentRecord.fromApi(Map<String, dynamic> json) {
     return PaymentRecord(
       courseId: (json['courseId'] ?? '').toString(),
       courseTitle: (json['courseTitle'] ?? '').toString(),
       amount: (json['amount'] is num) ? (json['amount'] as num).toDouble() : 0,
+      originalAmount: (json['originalAmount'] is num)
+          ? (json['originalAmount'] as num).toDouble()
+          : ((json['amount'] is num) ? (json['amount'] as num).toDouble() : 0),
       paymentMethod: (json['paymentMethod'] ?? 'manual').toString(),
       billingCycle: (json['billingCycle'] ?? '').toString(),
       status: (json['status'] ?? 'success').toString(),
@@ -35,6 +51,17 @@ class PaymentRecord {
       accessExpiresAt: (json['accessExpiresAt'] ?? '').toString().isEmpty
           ? null
           : DateTime.tryParse((json['accessExpiresAt'] ?? '').toString()),
+      couponCode: (json['couponCode'] ?? '').toString(),
+      couponDiscount: (json['couponDiscount'] is num)
+          ? (json['couponDiscount'] as num).toDouble()
+          : 0,
+      referralCode: (json['referralCode'] ?? '').toString(),
+      referralDiscount: (json['referralDiscount'] is num)
+          ? (json['referralDiscount'] as num).toDouble()
+          : 0,
+      referrerRewardAmount: (json['referrerRewardAmount'] is num)
+          ? (json['referrerRewardAmount'] as num).toDouble()
+          : 0,
     );
   }
 
@@ -96,6 +123,8 @@ class AppUser {
     this.address = '',
     this.profileImage = '',
     this.passwordHash = '',
+    this.referralCode = '',
+    this.referralSummary = const ReferralSummary(),
   });
 
   final String id;
@@ -105,6 +134,8 @@ class AppUser {
   final String address;
   final String profileImage;
   final String passwordHash;
+  final String referralCode;
+  final ReferralSummary referralSummary;
   final UserRole role;
   final List<PurchasedCourse> enrolledCourses;
   final List<PaymentRecord> paymentHistory;
@@ -122,6 +153,10 @@ class AppUser {
       phone: (json['phone'] ?? '').toString(),
       address: (json['address'] ?? '').toString(),
       profileImage: (json['profileImage'] ?? '').toString(),
+      referralCode: (json['referralCode'] ?? '').toString(),
+      referralSummary: ReferralSummary.fromApi(
+        json['referralSummary'] as Map<String, dynamic>?,
+      ),
       role: roleRaw == 'admin' ? UserRole.admin : UserRole.student,
       enrolledCourses: rawCourses
           .whereType<Map<String, dynamic>>()
@@ -142,6 +177,8 @@ class AppUser {
     String? address,
     String? profileImage,
     String? passwordHash,
+    String? referralCode,
+    ReferralSummary? referralSummary,
     UserRole? role,
     List<PurchasedCourse>? enrolledCourses,
     List<PaymentRecord>? paymentHistory,
@@ -154,6 +191,8 @@ class AppUser {
       address: address ?? this.address,
       profileImage: profileImage ?? this.profileImage,
       passwordHash: passwordHash ?? this.passwordHash,
+      referralCode: referralCode ?? this.referralCode,
+      referralSummary: referralSummary ?? this.referralSummary,
       role: role ?? this.role,
       enrolledCourses: enrolledCourses ?? this.enrolledCourses,
       paymentHistory: paymentHistory ?? this.paymentHistory,

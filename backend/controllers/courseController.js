@@ -1,6 +1,10 @@
 const Course = require('../models/Course');
 const User = require('../models/User');
 const path = require('path');
+const {
+  buildCheckoutPreview,
+  recordSuccessfulPromotionUsage,
+} = require('../services/promotionService');
 
 const toPublicUrl = (req, filePath) => {
   const normalized = filePath.split(path.sep).join('/');
@@ -293,7 +297,7 @@ exports.deleteCourse = async (req, res, next) => {
 
 exports.purchaseCourse = async (req, res, next) => {
   try {
-    const { paymentMethod, billingCycle } = req.body;
+    const { paymentMethod, billingCycle, couponCode, referralCode } = req.body;
     const course = await Course.findById(req.params.id);
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
@@ -325,6 +329,14 @@ exports.purchaseCourse = async (req, res, next) => {
       selectedCycle && Number(cycleToPrice[selectedCycle]) > 0
         ? Number(cycleToPrice[selectedCycle])
         : course.price || 0;
+    const preview = await buildCheckoutPreview({
+      course,
+      billingCycle: selectedCycle,
+      couponCode,
+      referralCode,
+      user,
+      req,
+    });
     const paidAt = new Date();
     const accessExpiresAt = addMonths(
       paidAt,
@@ -340,20 +352,42 @@ exports.purchaseCourse = async (req, res, next) => {
     user.paymentHistory.push({
       courseId: course._id,
       courseTitle: course.title,
-      amount,
+      amount: preview.finalAmount,
       paymentMethod: paymentMethod || 'manual',
       billingCycle: selectedCycle,
       status: 'success',
       paidAt,
       accessExpiresAt,
+      originalAmount: preview.originalAmount || amount,
+      couponCode: preview.couponCode || '',
+      couponDiscount: preview.couponDiscount || 0,
+      referralCode: preview.referralCode || '',
+      referralDiscount: preview.referralDiscount || 0,
+      referredByUserId: preview.referralMeta?.referrerUserId || null,
+      referrerRewardAmount: preview.referrerRewardAmount || 0,
+    });
+    await recordSuccessfulPromotionUsage({
+      user,
+      course,
+      billingCycle: selectedCycle,
+      preview,
     });
     await user.save();
 
     return res.json({
       message:
-        amount > 0
+        preview.finalAmount > 0
           ? 'Course purchased successfully'
           : 'Course enrolled successfully',
+      payment: {
+        originalAmount: preview.originalAmount,
+        finalAmount: preview.finalAmount,
+        couponCode: preview.couponCode,
+        couponDiscount: preview.couponDiscount,
+        referralCode: preview.referralCode,
+        referralDiscount: preview.referralDiscount,
+        referrerRewardAmount: preview.referrerRewardAmount,
+      },
       enrolledCourse: {
         id: course._id,
         title: course.title,

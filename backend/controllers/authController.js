@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const {
+  buildUserReferralSummary,
+  ensureUserReferralCode,
+} = require('../services/promotionService');
 
 const googleClient = new OAuth2Client();
 
@@ -44,11 +48,18 @@ const mapPaymentHistory = (payments) =>
         courseId: payment.courseId,
         courseTitle: payment.courseTitle || '',
         amount: payment.amount || 0,
+        originalAmount: payment.originalAmount || payment.amount || 0,
         paymentMethod: payment.paymentMethod || 'manual',
         billingCycle: payment.billingCycle || '',
         status: payment.status || 'success',
         paidAt: payment.paidAt,
         accessExpiresAt: payment.accessExpiresAt || null,
+        couponCode: payment.couponCode || '',
+        couponDiscount: payment.couponDiscount || 0,
+        referralCode: payment.referralCode || '',
+        referralDiscount: payment.referralDiscount || 0,
+        referrerRewardAmount: payment.referrerRewardAmount || 0,
+        referredByUserId: payment.referredByUserId || null,
       }))
     : [];
 
@@ -187,11 +198,12 @@ const withAccessGrantEntries = (courses, payments) => {
   return paymentList;
 };
 
-const toAuthResponse = (user) => {
+const toAuthResponse = async (user) => {
   const activeCourses = getActiveEnrolledCourses(
     user.enrolledCourses,
     user.paymentHistory
   );
+  const referralSummary = await buildUserReferralSummary(user);
 
   return {
     id: user._id,
@@ -201,6 +213,8 @@ const toAuthResponse = (user) => {
     phone: user.phone || '',
     address: user.address || '',
     profileImage: user.profileImage || '',
+    referralCode: referralSummary.code,
+    referralSummary,
     enrolledCourses: mapEnrolledCourses(activeCourses),
     paymentHistory: buildPaymentHistoryResponse(
       activeCourses,
@@ -270,13 +284,14 @@ exports.register = async (req, res, next) => {
       address: address || '',
       profileImage: profileImage || '',
     });
+    await ensureUserReferralCode(user);
 
     const hydrated = await User.findById(user._id).populate(
       'enrolledCourses',
       'title price pricing thumbnail'
     );
 
-    return res.status(201).json(toAuthResponse(hydrated));
+    return res.status(201).json(await toAuthResponse(hydrated));
   } catch (error) {
     return next(error);
   }
@@ -299,7 +314,8 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: 'Incorrect password' });
     }
 
-    return res.json(toAuthResponse(user));
+    await ensureUserReferralCode(user);
+    return res.json(await toAuthResponse(user));
   } catch (error) {
     return next(error);
   }
@@ -357,13 +373,14 @@ exports.googleLogin = async (req, res, next) => {
       }
       await user.save();
     }
+    await ensureUserReferralCode(user);
 
     const hydrated = await User.findById(user._id).populate(
       'enrolledCourses',
       'title price pricing thumbnail'
     );
 
-    return res.json(toAuthResponse(hydrated));
+    return res.json(await toAuthResponse(hydrated));
   } catch (error) {
     if (error && /Wrong recipient|Invalid token|Token used too late|No pem/i.test(error.message || '')) {
       return res.status(401).json({ message: 'Google sign-in token is invalid' });
@@ -381,6 +398,7 @@ exports.getProfile = async (req, res, next) => {
       user.enrolledCourses,
       user.paymentHistory
     );
+    const referralSummary = await buildUserReferralSummary(user);
     return res.json({
       id: user._id,
       name: user.name,
@@ -389,6 +407,8 @@ exports.getProfile = async (req, res, next) => {
       phone: user.phone || '',
       address: user.address || '',
       profileImage: user.profileImage || '',
+      referralCode: referralSummary.code,
+      referralSummary,
       enrolledCourses: mapEnrolledCourses(activeCourses),
       paymentHistory: buildPaymentHistoryResponse(
         activeCourses,
@@ -432,6 +452,7 @@ exports.updateProfile = async (req, res, next) => {
       hydrated.enrolledCourses,
       hydrated.paymentHistory
     );
+    const referralSummary = await buildUserReferralSummary(hydrated);
 
     return res.json({
       id: user._id,
@@ -441,6 +462,8 @@ exports.updateProfile = async (req, res, next) => {
       phone: user.phone || '',
       address: user.address || '',
       profileImage: user.profileImage || '',
+      referralCode: referralSummary.code,
+      referralSummary,
       enrolledCourses: mapEnrolledCourses(activeCourses),
       paymentHistory: buildPaymentHistoryResponse(
         activeCourses,
@@ -479,29 +502,37 @@ exports.getUsersForAdmin = async (req, res, next) => {
       .sort({ createdAt: -1 });
 
     const payload = users.map((user) => {
-      const activeCourses = getActiveEnrolledCourses(
-        user.enrolledCourses,
-        user.paymentHistory
-      );
-
-      return {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone || '',
-        address: user.address || '',
-        profileImage: user.profileImage || '',
-        createdAt: user.createdAt,
-        enrolledCourses: mapEnrolledCourses(activeCourses),
-        paymentHistory: buildPaymentHistoryResponse(
-          activeCourses,
-          user.paymentHistory
-        ),
-      };
+      return user;
     });
 
-    return res.json(payload);
+    const enriched = await Promise.all(
+      payload.map(async (user) => {
+        const activeCourses = getActiveEnrolledCourses(
+          user.enrolledCourses,
+          user.paymentHistory
+        );
+        const referralSummary = await buildUserReferralSummary(user);
+        return {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone || '',
+          address: user.address || '',
+          profileImage: user.profileImage || '',
+          createdAt: user.createdAt,
+          referralCode: referralSummary.code,
+          referralSummary,
+          enrolledCourses: mapEnrolledCourses(activeCourses),
+          paymentHistory: buildPaymentHistoryResponse(
+            activeCourses,
+            user.paymentHistory
+          ),
+        };
+      })
+    );
+
+    return res.json(enriched);
   } catch (error) {
     return next(error);
   }
@@ -550,6 +581,7 @@ exports.updateUserByAdmin = async (req, res, next) => {
       hydrated.enrolledCourses,
       hydrated.paymentHistory
     );
+    const referralSummary = await buildUserReferralSummary(hydrated);
 
     return res.json({
       id: hydrated._id,
@@ -560,6 +592,8 @@ exports.updateUserByAdmin = async (req, res, next) => {
       address: hydrated.address || '',
       profileImage: hydrated.profileImage || '',
       createdAt: hydrated.createdAt,
+      referralCode: referralSummary.code,
+      referralSummary,
       enrolledCourses: mapEnrolledCourses(activeCourses),
       paymentHistory: buildPaymentHistoryResponse(
         activeCourses,

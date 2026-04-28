@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/app_user.dart';
 import '../models/admin_user.dart';
 import 'api_client.dart';
-import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
@@ -28,6 +28,17 @@ class AuthService {
   String? _googleInitializationError;
 
   AuthSession? get currentSession => _currentSession;
+
+  String _friendlyError(Object error, String fallback) {
+    final String text = error.toString().trim();
+    if (text.isEmpty) {
+      return fallback;
+    }
+    if (text.startsWith('Exception: ')) {
+      return text.substring('Exception: '.length).trim();
+    }
+    return text;
+  }
 
   void seedDefaults() {
     // No-op for API-backed auth flow.
@@ -89,8 +100,10 @@ class AuthService {
       return null;
     } on ApiException catch (e) {
       return e.message;
-    } catch (_) {
-      return 'Registration failed. Please try again.';
+    } catch (error, stackTrace) {
+      debugPrint('registerStudent failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return _friendlyError(error, 'Registration failed. Please try again.');
     }
   }
 
@@ -121,8 +134,10 @@ class AuthService {
       return null;
     } on ApiException catch (e) {
       return e.message;
-    } catch (_) {
-      return 'Login failed. Please try again.';
+    } catch (error, stackTrace) {
+      debugPrint('login failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return _friendlyError(error, 'Login failed. Please try again.');
     }
   }
 
@@ -182,8 +197,10 @@ class AuthService {
       }
     } on ApiException catch (e) {
       return e.message;
-    } catch (_) {
-      return 'Google sign-in failed. Please try again.';
+    } catch (error, stackTrace) {
+      debugPrint('loginWithGoogle failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return _friendlyError(error, 'Google sign-in failed. Please try again.');
     }
   }
 
@@ -245,8 +262,13 @@ class AuthService {
       return null;
     } on ApiException catch (e) {
       return e.message;
-    } catch (_) {
-      return 'Failed to reset password. Please try again.';
+    } catch (error, stackTrace) {
+      debugPrint('forgotPassword failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return _friendlyError(
+        error,
+        'Failed to reset password. Please try again.',
+      );
     }
   }
 

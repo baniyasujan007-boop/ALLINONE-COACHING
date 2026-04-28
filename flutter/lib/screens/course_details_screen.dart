@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/course_model.dart';
+import '../models/promotion.dart';
 import '../providers/app_state.dart';
+import '../services/promotion_service.dart';
 import '../services/progress_service.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/lesson_tile.dart';
@@ -36,6 +38,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     String paymentMethod = 'upi';
     String billingCycle = _defaultBillingCycle(course);
     bool processing = false;
+    bool previewLoading = false;
+    String? checkoutError;
+    CheckoutPreview? preview;
+    final TextEditingController couponController = TextEditingController();
+    final TextEditingController referralController = TextEditingController();
     final NavigatorState navigator = Navigator.of(context);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final CoursePricingItem activePricing = _activePricing(course);
@@ -49,186 +56,325 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         .where((MapEntry<String, double> entry) => entry.value > 0)
         .toList();
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            final double amount = _selectedBillingAmount(course, billingCycle);
-            return SafeArea(
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.fromLTRB(
-                  12,
-                  12,
-                  12,
-                  MediaQuery.of(context).viewInsets.bottom + 12,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setModalState) {
+              final double amount =
+                  preview?.finalAmount ??
+                  _selectedBillingAmount(course, billingCycle);
+              Future<void> previewCheckout() async {
+                setModalState(() {
+                  previewLoading = true;
+                  checkoutError = null;
+                });
+                try {
+                  final CheckoutPreview nextPreview = await PromotionService
+                      .instance
+                      .previewCheckout(
+                        courseId: course.id,
+                        billingCycle: billingCycle,
+                        couponCode: couponController.text,
+                        referralCode: referralController.text,
+                      );
+                  setModalState(() {
+                    preview = nextPreview;
+                  });
+                } catch (e) {
+                  setModalState(() {
+                    preview = null;
+                    checkoutError = e.toString();
+                  });
+                } finally {
+                  setModalState(() {
+                    previewLoading = false;
+                  });
+                }
+              }
+
+              void clearPreview() {
+                setModalState(() {
+                  preview = null;
+                  checkoutError = null;
+                });
+              }
+
+              return SafeArea(
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    12,
+                    12,
+                    MediaQuery.of(context).viewInsets.bottom + 12,
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(28),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.9,
                     ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            'Complete payment',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pay online to unlock ${course.title} instantly.',
-                            style: TextStyle(
-                              color: Theme.of(context).hintColor,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Complete payment',
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          ...availableCycles.map(
-                            (MapEntry<String, double> entry) =>
-                                _PaymentMethodTile(
-                                  title: _billingLabel(entry.key),
-                                  subtitle: _planSubtitle(course, entry.key),
-                                  value: entry.key,
-                                  groupValue: billingCycle,
-                                  onChanged: (String value) {
-                                    setModalState(() {
-                                      billingCycle = value;
-                                    });
-                                  },
-                                ),
-                          ),
-                          if (availableCycles.isNotEmpty)
                             const SizedBox(height: 8),
-                          _PaymentMethodTile(
-                            title: 'UPI',
-                            subtitle: 'Fast online payment',
-                            value: 'upi',
-                            groupValue: paymentMethod,
-                            onChanged: (String value) {
-                              setModalState(() {
-                                paymentMethod = value;
-                              });
-                            },
-                          ),
-                          _PaymentMethodTile(
-                            title: 'Card',
-                            subtitle: 'Credit or debit card',
-                            value: 'card',
-                            groupValue: paymentMethod,
-                            onChanged: (String value) {
-                              setModalState(() {
-                                paymentMethod = value;
-                              });
-                            },
-                          ),
-                          _PaymentMethodTile(
-                            title: 'Net Banking',
-                            subtitle: 'Bank transfer checkout',
-                            value: 'bank',
-                            groupValue: paymentMethod,
-                            onChanged: (String value) {
-                              setModalState(() {
-                                paymentMethod = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 18),
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(18),
+                            Text(
+                              'Pay online to unlock ${course.title} instantly.',
+                              style: TextStyle(
+                                color: Theme.of(context).hintColor,
+                              ),
                             ),
-                            child: Row(
-                              children: <Widget>[
-                                const Icon(Icons.receipt_long_rounded),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Amount payable',
-                                    style: TextStyle(
-                                      color: Theme.of(context).hintColor,
-                                    ),
+                            const SizedBox(height: 18),
+                            ...availableCycles.map(
+                              (MapEntry<String, double> entry) =>
+                                  _PaymentMethodTile(
+                                    title: _billingLabel(entry.key),
+                                    subtitle: _planSubtitle(course, entry.key),
+                                    value: entry.key,
+                                    groupValue: billingCycle,
+                                    onChanged: (String value) {
+                                      setModalState(() {
+                                        billingCycle = value;
+                                        preview = null;
+                                        checkoutError = null;
+                                      });
+                                    },
                                   ),
-                                ),
-                                Text(
-                                  'Rs ${amount.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          GradientButton(
-                            label: processing
-                                ? 'Processing payment...'
-                                : 'Pay Now • Rs ${amount.toStringAsFixed(0)}',
-                            icon: Icons.lock_open_rounded,
-                            onPressed: processing
-                                ? () {}
-                                : () async {
-                                    setModalState(() {
-                                      processing = true;
-                                    });
-                                    await Future<void>.delayed(
-                                      const Duration(milliseconds: 900),
-                                    );
-                                    final bool ok = await appState
-                                        .purchaseCourse(
-                                          course.id,
-                                          paymentMethod: paymentMethod,
-                                          billingCycle: billingCycle,
-                                        );
-                                    if (!mounted) {
-                                      return;
-                                    }
-                                    if (navigator.canPop()) {
-                                      navigator.pop();
-                                    }
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          ok
-                                              ? _successMessageForBillingCycle(
-                                                  billingCycle,
-                                                )
-                                              : appState.authError ??
-                                                    'Payment failed',
+                            if (availableCycles.isNotEmpty)
+                              const SizedBox(height: 8),
+                            TextField(
+                              controller: couponController,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: const InputDecoration(
+                                labelText: 'Coupon code',
+                                prefixIcon: Icon(Icons.local_offer_rounded),
+                              ),
+                              onChanged: (_) => clearPreview(),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: referralController,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: const InputDecoration(
+                                labelText: 'Referral code',
+                                prefixIcon: Icon(Icons.group_add_rounded),
+                              ),
+                              onChanged: (_) => clearPreview(),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: previewLoading
+                                    ? null
+                                    : previewCheckout,
+                                icon: previewLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.price_check_rounded),
+                                label: const Text('Apply Coupon / Referral'),
+                              ),
+                            ),
+                            if (checkoutError != null) ...<Widget>[
+                              const SizedBox(height: 8),
+                              Text(
+                                checkoutError!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            _PaymentMethodTile(
+                              title: 'UPI',
+                              subtitle: 'Fast online payment',
+                              value: 'upi',
+                              groupValue: paymentMethod,
+                              onChanged: (String value) {
+                                setModalState(() {
+                                  paymentMethod = value;
+                                });
+                              },
+                            ),
+                            _PaymentMethodTile(
+                              title: 'Card',
+                              subtitle: 'Credit or debit card',
+                              value: 'card',
+                              groupValue: paymentMethod,
+                              onChanged: (String value) {
+                                setModalState(() {
+                                  paymentMethod = value;
+                                });
+                              },
+                            ),
+                            _PaymentMethodTile(
+                              title: 'Net Banking',
+                              subtitle: 'Bank transfer checkout',
+                              value: 'bank',
+                              groupValue: paymentMethod,
+                              onChanged: (String value) {
+                                setModalState(() {
+                                  paymentMethod = value;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Column(
+                                children: <Widget>[
+                                  Row(
+                                    children: <Widget>[
+                                      const Icon(Icons.receipt_long_rounded),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          'Amount payable',
+                                          style: TextStyle(
+                                            color: Theme.of(context).hintColor,
+                                          ),
                                         ),
                                       ),
-                                    );
-                                    if (ok) {
-                                      await _openFirstLesson(course);
-                                    }
-                                  },
-                          ),
-                        ],
+                                      Text(
+                                        'Rs ${amount.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (preview != null) ...<Widget>[
+                                    const SizedBox(height: 10),
+                                    _CheckoutAmountLine(
+                                      label: 'Original',
+                                      amount: preview!.originalAmount,
+                                    ),
+                                    if (preview!.couponDiscount > 0)
+                                      _CheckoutAmountLine(
+                                        label: 'Coupon discount',
+                                        amount: -preview!.couponDiscount,
+                                      ),
+                                    if (preview!.referralDiscount > 0)
+                                      _CheckoutAmountLine(
+                                        label: 'Referral discount',
+                                        amount: -preview!.referralDiscount,
+                                      ),
+                                    if (preview!
+                                        .messages
+                                        .isNotEmpty) ...<Widget>[
+                                      const SizedBox(height: 6),
+                                      ...preview!.messages.map(
+                                        (String message) => Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(message),
+                                        ),
+                                      ),
+                                    ],
+                                    if (preview!
+                                        .referralOwnerName
+                                        .isNotEmpty) ...<Widget>[
+                                      const SizedBox(height: 4),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Referred by ${preview!.referralOwnerName}',
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            GradientButton(
+                              label: processing
+                                  ? 'Processing payment...'
+                                  : 'Pay Now • Rs ${amount.toStringAsFixed(0)}',
+                              icon: Icons.lock_open_rounded,
+                              onPressed: processing
+                                  ? () {}
+                                  : () async {
+                                      setModalState(() {
+                                        processing = true;
+                                      });
+                                      await Future<void>.delayed(
+                                        const Duration(milliseconds: 900),
+                                      );
+                                      final bool ok = await appState
+                                          .purchaseCourse(
+                                            course.id,
+                                            paymentMethod: paymentMethod,
+                                            billingCycle: billingCycle,
+                                            couponCode: couponController.text,
+                                            referralCode:
+                                                referralController.text,
+                                          );
+                                      if (!mounted) {
+                                        return;
+                                      }
+                                      if (navigator.canPop()) {
+                                        navigator.pop();
+                                      }
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            ok
+                                                ? _successMessageForBillingCycle(
+                                                    billingCycle,
+                                                  )
+                                                : appState.authError ??
+                                                      'Payment failed',
+                                          ),
+                                        ),
+                                      );
+                                      if (ok) {
+                                        await _openFirstLesson(course);
+                                      }
+                                    },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      couponController.dispose();
+      referralController.dispose();
+    }
   }
 
   Future<void> _purchaseCourse(AppState appState, CourseItem course) async {
@@ -820,6 +966,29 @@ class _PaymentMethodTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CheckoutAmountLine extends StatelessWidget {
+  const _CheckoutAmountLine({required this.label, required this.amount});
+
+  final String label;
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Text(label)),
+          Text(
+            '${amount < 0 ? '- ' : ''}Rs ${amount.abs().toStringAsFixed(0)}',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }

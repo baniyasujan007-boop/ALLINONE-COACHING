@@ -11,6 +11,7 @@ const quizRoutes = require('./routes/quizRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const communityRoutes = require('./routes/communityRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 const {
   notFound,
   errorHandler,
@@ -36,6 +37,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

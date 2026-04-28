@@ -241,16 +241,17 @@ class CourseService {
     String courseId, {
     String paymentMethod = 'manual',
     String billingCycle = '',
+    String couponCode = '',
+    String referralCode = '',
   }) async {
     try {
-      await ApiClient.instance.post(
-        '/courses/$courseId/purchase',
-        <String, dynamic>{
-          'paymentMethod': paymentMethod,
-          'billingCycle': billingCycle,
-        },
-        auth: true,
-      );
+      await ApiClient.instance
+          .post('/courses/$courseId/purchase', <String, dynamic>{
+            'paymentMethod': paymentMethod,
+            'billingCycle': billingCycle,
+            'couponCode': couponCode,
+            'referralCode': referralCode,
+          }, auth: true);
       return null;
     } on ApiException catch (e) {
       return e.message;
@@ -426,7 +427,9 @@ class CourseService {
       price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0,
       pricing: CoursePricing.fromApi(
         json['pricing'] as Map<String, dynamic>?,
-        fallback: (json['price'] is num) ? (json['price'] as num).toDouble() : 0,
+        fallback: (json['price'] is num)
+            ? (json['price'] as num).toDouble()
+            : 0,
       ),
       offer: CourseOffer.fromApi(json['offer'] as Map<String, dynamic>?),
       isLocked: json['isLocked'] != false,
