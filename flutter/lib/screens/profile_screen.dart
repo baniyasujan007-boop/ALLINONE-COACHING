@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../widgets/animated_gradient_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
+import 'engagement_screen.dart';
 import 'login_screen.dart';
 import 'profile_detail_screens.dart';
 
@@ -330,6 +331,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+            _tile(
+              context,
+              Icons.local_fire_department_rounded,
+              'Engagement',
+              '${appState.streakCount}d streak',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const EngagementScreen(),
+                ),
+              ),
+            ),
             SwitchListTile.adaptive(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -376,9 +388,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     IconData icon,
     String title,
-    String value,
-    {VoidCallback? onTap}
-  ) {
+    String value, {
+    VoidCallback? onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
@@ -390,10 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
             if (onTap != null) ...<Widget>[
               const SizedBox(width: 6),
               const Icon(Icons.chevron_right_rounded),
