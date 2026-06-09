@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../config/app_config.dart';
 import '../data/quiz_seed_data.dart';
 import '../models/course.dart';
 import 'api_client.dart';
@@ -188,7 +189,9 @@ class CourseService {
     if (json is! Map<String, dynamic>) {
       throw ApiException('Invalid file upload response');
     }
-    final String url = (json['url'] ?? '').toString();
+    final String url = AppConfig.resolveBackendAssetUrl(
+      (json['url'] ?? '').toString(),
+    );
     if (url.isEmpty) {
       throw ApiException('File upload failed');
     }
@@ -208,7 +211,9 @@ class CourseService {
     if (json is! Map<String, dynamic>) {
       throw ApiException('Invalid thumbnail upload response');
     }
-    final String url = (json['url'] ?? '').toString();
+    final String url = AppConfig.resolveBackendAssetUrl(
+      (json['url'] ?? '').toString(),
+    );
     if (url.isEmpty) {
       throw ApiException('Thumbnail upload failed');
     }
@@ -422,7 +427,9 @@ class CourseService {
       id: (json['_id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      thumbnailUrl: (json['thumbnail'] ?? '').toString(),
+      thumbnailUrl: AppConfig.resolveBackendAssetUrl(
+        (json['thumbnail'] ?? '').toString(),
+      ),
       instructor: (json['instructor'] ?? '').toString(),
       price: (json['price'] is num) ? (json['price'] as num).toDouble() : 0,
       pricing: CoursePricing.fromApi(

@@ -58,16 +58,18 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
           ? ''
           : course.pricing.monthly.toStringAsFixed(0),
     );
-    final TextEditingController quarterlyPriceController = TextEditingController(
-      text: course == null || course.pricing.quarterly <= 0
-          ? ''
-          : course.pricing.quarterly.toStringAsFixed(0),
-    );
-    final TextEditingController semiAnnualPriceController = TextEditingController(
-      text: course == null || course.pricing.semiAnnual <= 0
-          ? ''
-          : course.pricing.semiAnnual.toStringAsFixed(0),
-    );
+    final TextEditingController quarterlyPriceController =
+        TextEditingController(
+          text: course == null || course.pricing.quarterly <= 0
+              ? ''
+              : course.pricing.quarterly.toStringAsFixed(0),
+        );
+    final TextEditingController semiAnnualPriceController =
+        TextEditingController(
+          text: course == null || course.pricing.semiAnnual <= 0
+              ? ''
+              : course.pricing.semiAnnual.toStringAsFixed(0),
+        );
     final TextEditingController yearlyPriceController = TextEditingController(
       text: course == null || course.pricing.yearly <= 0
           ? ''
@@ -156,332 +158,327 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext dialogContext, StateSetter setStateDialog) {
+          final double dialogWidth = MediaQuery.sizeOf(dialogContext).width;
           return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 24,
+            ),
             title: Text(course == null ? 'Add Course' : 'Edit Course'),
-            content: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextFormField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Course title',
-                      ),
-                      validator: (String? value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter a title';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: descController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                      ),
-                      validator: (String? value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter a description';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: thumbnailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Thumbnail URL',
-                      ),
-                      validator: (String? value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter a thumbnail URL';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: priceController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Price',
-                        prefixText: 'Rs ',
-                      ),
-                      validator: (String? value) {
-                        final String raw = value?.trim() ?? '';
-                        if (raw.isEmpty) {
-                          return null;
-                        }
-                        final double? parsed = double.tryParse(raw);
-                        if (parsed == null || parsed < 0) {
-                          return 'Enter a valid price';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _pricingField(
-                      controller: monthlyPriceController,
-                      label: 'Monthly price',
-                    ),
-                    const SizedBox(height: 12),
-                    _pricingField(
-                      controller: quarterlyPriceController,
-                      label: 'Quarterly price',
-                    ),
-                    const SizedBox(height: 12),
-                    _pricingField(
-                      controller: semiAnnualPriceController,
-                      label: 'Semi-annual price',
-                    ),
-                    const SizedBox(height: 12),
-                    _pricingField(
-                      controller: yearlyPriceController,
-                      label: 'Yearly price',
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      value: offerEnabled,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Enable limited-time offer'),
-                      subtitle: const Text(
-                        'Show this course in the home-page offer section',
-                      ),
-                      onChanged: (bool value) {
-                        setStateDialog(() {
-                          offerEnabled = value;
-                          if (offerEnabled && offerExpiresAt == null) {
-                            offerExpiresAt = DateTime.now().add(
-                              const Duration(days: 7),
-                            );
+            content: SizedBox(
+              width: dialogWidth < 520 ? double.maxFinite : 480,
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Course title',
+                        ),
+                        validator: (String? value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter a title';
                           }
-                        });
-                      },
-                    ),
-                    if (offerEnabled) ...<Widget>[
+                          return null;
+                        },
+                      ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        controller: offerTitleController,
+                        controller: descController,
                         decoration: const InputDecoration(
-                          labelText: 'Offer title',
-                          hintText: 'Flash sale, Festive offer, Weekend drop',
+                          labelText: 'Description',
                         ),
+                        validator: (String? value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter a description';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 12),
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.schedule_rounded),
-                        title: const Text('Offer ends'),
-                        subtitle: Text(
-                          offerExpiresAt == null
-                              ? 'Choose offer end date and time'
-                              : _formatDateTime(offerExpiresAt!),
+                      TextFormField(
+                        controller: thumbnailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Thumbnail URL',
                         ),
-                        trailing: Wrap(
-                          spacing: 8,
-                          children: <Widget>[
-                            TextButton(
-                              onPressed: () async {
-                                final DateTime now = DateTime.now();
-                                final DateTime initialDate =
-                                    offerExpiresAt ?? now.add(const Duration(days: 7));
-                                final DateTime? pickedDate =
-                                    await showDatePicker(
-                                      context: dialogContext,
-                                      initialDate: initialDate,
-                                      firstDate: now,
-                                      lastDate: now.add(const Duration(days: 365)),
-                                    );
-                                if (pickedDate == null || !dialogContext.mounted) {
-                                  return;
-                                }
-                                final TimeOfDay initialTime = offerExpiresAt == null
-                                    ? const TimeOfDay(hour: 23, minute: 59)
-                                    : TimeOfDay.fromDateTime(offerExpiresAt!);
-                                final TimeOfDay? pickedTime =
-                                    await showTimePicker(
-                                      context: dialogContext,
-                                      initialTime: initialTime,
-                                    );
-                                if (pickedTime == null) {
-                                  return;
-                                }
-                                setStateDialog(() {
-                                  offerExpiresAt = DateTime(
-                                    pickedDate.year,
-                                    pickedDate.month,
-                                    pickedDate.day,
-                                    pickedTime.hour,
-                                    pickedTime.minute,
-                                  );
-                                });
-                              },
-                              child: const Text('Choose'),
-                            ),
-                            if (offerExpiresAt != null)
-                              TextButton(
-                                onPressed: () {
+                        validator: (String? value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter a thumbnail URL';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: priceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Price',
+                          prefixText: 'Rs ',
+                        ),
+                        validator: (String? value) {
+                          final String raw = value?.trim() ?? '';
+                          if (raw.isEmpty) {
+                            return null;
+                          }
+                          final double? parsed = double.tryParse(raw);
+                          if (parsed == null || parsed < 0) {
+                            return 'Enter a valid price';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _pricingField(
+                        controller: monthlyPriceController,
+                        label: 'Monthly price',
+                      ),
+                      const SizedBox(height: 12),
+                      _pricingField(
+                        controller: quarterlyPriceController,
+                        label: 'Quarterly price',
+                      ),
+                      const SizedBox(height: 12),
+                      _pricingField(
+                        controller: semiAnnualPriceController,
+                        label: 'Semi-annual price',
+                      ),
+                      const SizedBox(height: 12),
+                      _pricingField(
+                        controller: yearlyPriceController,
+                        label: 'Yearly price',
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        value: offerEnabled,
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Enable limited-time offer'),
+                        subtitle: const Text(
+                          'Show this course in the home-page offer section',
+                        ),
+                        onChanged: (bool value) {
+                          setStateDialog(() {
+                            offerEnabled = value;
+                            if (offerEnabled && offerExpiresAt == null) {
+                              offerExpiresAt = DateTime.now().add(
+                                const Duration(days: 7),
+                              );
+                            }
+                          });
+                        },
+                      ),
+                      if (offerEnabled) ...<Widget>[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: offerTitleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Offer title',
+                            hintText: 'Flash sale, Festive offer, Weekend drop',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _OfferEndsPicker(
+                          expiresAt: offerExpiresAt,
+                          onChoose: () async {
+                            final DateTime now = DateTime.now();
+                            final DateTime initialDate =
+                                offerExpiresAt ??
+                                now.add(const Duration(days: 7));
+                            final DateTime? pickedDate = await showDatePicker(
+                              context: dialogContext,
+                              initialDate: initialDate,
+                              firstDate: now,
+                              lastDate: now.add(const Duration(days: 365)),
+                            );
+                            if (pickedDate == null || !dialogContext.mounted) {
+                              return;
+                            }
+                            final TimeOfDay initialTime = offerExpiresAt == null
+                                ? const TimeOfDay(hour: 23, minute: 59)
+                                : TimeOfDay.fromDateTime(offerExpiresAt!);
+                            final TimeOfDay? pickedTime = await showTimePicker(
+                              context: dialogContext,
+                              initialTime: initialTime,
+                            );
+                            if (pickedTime == null) {
+                              return;
+                            }
+                            setStateDialog(() {
+                              offerExpiresAt = DateTime(
+                                pickedDate.year,
+                                pickedDate.month,
+                                pickedDate.day,
+                                pickedTime.hour,
+                                pickedTime.minute,
+                              );
+                            });
+                          },
+                          onClear: offerExpiresAt == null
+                              ? null
+                              : () {
                                   setStateDialog(() {
                                     offerExpiresAt = null;
                                   });
                                 },
-                                child: const Text('Clear'),
-                              ),
-                          ],
+                          formattedValue: offerExpiresAt == null
+                              ? 'Choose offer end date and time'
+                              : _formatDateTime(offerExpiresAt!),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _pricingField(
-                        controller: offerMonthlyPriceController,
-                        label: 'Offer monthly price',
-                      ),
-                      const SizedBox(height: 12),
-                      _pricingField(
-                        controller: offerQuarterlyPriceController,
-                        label: 'Offer quarterly price',
-                      ),
-                      const SizedBox(height: 12),
-                      _pricingField(
-                        controller: offerSemiAnnualPriceController,
-                        label: 'Offer semi-annual price',
-                      ),
-                      const SizedBox(height: 12),
-                      _pricingField(
-                        controller: offerYearlyPriceController,
-                        label: 'Offer yearly price',
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    SwitchListTile(
-                      value: isLocked,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Lock course'),
-                      subtitle: const Text(
-                        'Students must pay before they can use this course',
-                      ),
-                      onChanged: (bool value) {
-                        setStateDialog(() {
-                          isLocked = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: <Widget>[
-                        OutlinedButton.icon(
-                          onPressed: uploadingThumbnail
-                              ? null
-                              : () async {
-                                  await uploadThumbnailFromGallery(
-                                    dialogContext,
-                                    setStateDialog,
-                                  );
-                                },
-                          icon: uploadingThumbnail
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.photo_library_outlined),
-                          label: const Text('Choose from Gallery'),
+                        const SizedBox(height: 12),
+                        _pricingField(
+                          controller: offerMonthlyPriceController,
+                          label: 'Offer monthly price',
                         ),
-                        OutlinedButton.icon(
-                          onPressed: uploadingThumbnail
-                              ? null
-                              : () async {
-                                  setStateDialog(() {
-                                    uploadingThumbnail = true;
-                                  });
-                                  final FilePickerResult? result =
-                                      await FilePicker.platform.pickFiles(
-                                        type: FileType.custom,
-                                        allowedExtensions: const <String>[
-                                          'jpg',
-                                          'jpeg',
-                                          'png',
-                                          'webp',
-                                        ],
-                                        withData: true,
-                                      );
-                                  if (result != null &&
-                                      result.files.isNotEmpty &&
-                                      result.files.first.bytes != null) {
-                                    if (!mounted) return;
-                                    final ScaffoldMessengerState messenger =
-                                        ScaffoldMessenger.of(context);
-                                    try {
-                                      final String url = await CourseService
-                                          .instance
-                                          .uploadCourseThumbnail(
-                                            bytes: result.files.first.bytes!,
-                                            filename: result.files.first.name,
-                                          );
-                                      thumbnailController.text = url;
-                                      if (dialogContext.mounted) {
-                                        messenger.showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Thumbnail uploaded: ${result.files.first.name}',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (dialogContext.mounted) {
-                                        messenger.showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Thumbnail upload failed: $e',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  }
-                                  if (dialogContext.mounted) {
-                                    setStateDialog(() {
-                                      uploadingThumbnail = false;
-                                    });
-                                  }
-                                },
-                          icon: uploadingThumbnail
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.upload_file),
-                          label: const Text('Upload File'),
+                        const SizedBox(height: 12),
+                        _pricingField(
+                          controller: offerQuarterlyPriceController,
+                          label: 'Offer quarterly price',
+                        ),
+                        const SizedBox(height: 12),
+                        _pricingField(
+                          controller: offerSemiAnnualPriceController,
+                          label: 'Offer semi-annual price',
+                        ),
+                        const SizedBox(height: 12),
+                        _pricingField(
+                          controller: offerYearlyPriceController,
+                          label: 'Offer yearly price',
                         ),
                       ],
-                    ),
-                    if (course == null) ...<Widget>[
                       const SizedBox(height: 10),
                       SwitchListTile(
-                        value: openContentEditorAfterSave,
+                        value: isLocked,
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Open editor after create'),
-                        subtitle: const Text('Add videos and files right away'),
+                        title: const Text('Lock course'),
+                        subtitle: const Text(
+                          'Students must pay before they can use this course',
+                        ),
                         onChanged: (bool value) {
                           setStateDialog(() {
-                            openContentEditorAfterSave = value;
+                            isLocked = value;
                           });
                         },
                       ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          OutlinedButton.icon(
+                            onPressed: uploadingThumbnail
+                                ? null
+                                : () async {
+                                    await uploadThumbnailFromGallery(
+                                      dialogContext,
+                                      setStateDialog,
+                                    );
+                                  },
+                            icon: uploadingThumbnail
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.photo_library_outlined),
+                            label: const Text('Choose from Gallery'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: uploadingThumbnail
+                                ? null
+                                : () async {
+                                    setStateDialog(() {
+                                      uploadingThumbnail = true;
+                                    });
+                                    final FilePickerResult? result =
+                                        await FilePicker.platform.pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: const <String>[
+                                            'jpg',
+                                            'jpeg',
+                                            'png',
+                                            'webp',
+                                          ],
+                                          withData: true,
+                                        );
+                                    if (result != null &&
+                                        result.files.isNotEmpty &&
+                                        result.files.first.bytes != null) {
+                                      if (!mounted) return;
+                                      final ScaffoldMessengerState messenger =
+                                          ScaffoldMessenger.of(context);
+                                      try {
+                                        final String url = await CourseService
+                                            .instance
+                                            .uploadCourseThumbnail(
+                                              bytes: result.files.first.bytes!,
+                                              filename: result.files.first.name,
+                                            );
+                                        thumbnailController.text = url;
+                                        if (dialogContext.mounted) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Thumbnail uploaded: ${result.files.first.name}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (dialogContext.mounted) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Thumbnail upload failed: $e',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                    if (dialogContext.mounted) {
+                                      setStateDialog(() {
+                                        uploadingThumbnail = false;
+                                      });
+                                    }
+                                  },
+                            icon: uploadingThumbnail
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.upload_file),
+                            label: const Text('Upload File'),
+                          ),
+                        ],
+                      ),
+                      if (course == null) ...<Widget>[
+                        const SizedBox(height: 10),
+                        SwitchListTile(
+                          value: openContentEditorAfterSave,
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Open editor after create'),
+                          subtitle: const Text(
+                            'Add videos and files right away',
+                          ),
+                          onChanged: (bool value) {
+                            setStateDialog(() {
+                              openContentEditorAfterSave = value;
+                            });
+                          },
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -503,11 +500,16 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
                       double.tryParse(priceController.text.trim()) ?? 0;
                   final CoursePricing pricing = CoursePricing(
                     monthly:
-                        double.tryParse(monthlyPriceController.text.trim()) ?? 0,
+                        double.tryParse(monthlyPriceController.text.trim()) ??
+                        0,
                     quarterly:
-                        double.tryParse(quarterlyPriceController.text.trim()) ?? 0,
+                        double.tryParse(quarterlyPriceController.text.trim()) ??
+                        0,
                     semiAnnual:
-                        double.tryParse(semiAnnualPriceController.text.trim()) ?? 0,
+                        double.tryParse(
+                          semiAnnualPriceController.text.trim(),
+                        ) ??
+                        0,
                     yearly:
                         double.tryParse(yearlyPriceController.text.trim()) ?? 0,
                   );
@@ -539,8 +541,9 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
                           expiresAt: offerExpiresAt,
                         )
                       : const CourseOffer();
-                  final double price =
-                      pricing.lowest > 0 ? pricing.lowest : fallbackPrice;
+                  final double price = pricing.lowest > 0
+                      ? pricing.lowest
+                      : fallbackPrice;
 
                   if (course == null) {
                     await CourseService.instance.addCourse(
@@ -636,76 +639,56 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _courses.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (BuildContext context, int index) {
-                final Course course = _courses[index];
-                return Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(
-                        course.title.isEmpty
-                            ? '?'
-                            : course.title.substring(0, 1).toUpperCase(),
-                      ),
-                    ),
-                    title: Text(course.title),
-                    subtitle: Text(
-                      '${course.isLocked ? 'Locked' : 'Unlocked'} • ${course.offer.isActive ? 'Offer live' : 'Regular pricing'} • Starts at Rs ${(course.offer.isActive ? course.offer.pricing.lowest : (course.pricing.lowest > 0 ? course.pricing.lowest : course.price)).toStringAsFixed(0)} • ${course.description}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Wrap(
-                      spacing: 8,
-                      children: <Widget>[
-                        IconButton(
-                          icon: const Icon(Icons.lock_person_outlined),
-                          tooltip: 'Manage Access',
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                builder: (_) =>
-                                    AdminCourseAccessPage(course: course),
-                              ),
-                            );
-                            if (!mounted) {
-                              return;
-                            }
-                            _reload();
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.settings_outlined),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    AdminCourseEditorPage(courseId: course.id),
-                              ),
-                            );
-                            _reload();
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _showCourseForm(course: course),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () async {
-                            await CourseService.instance.deleteCourse(
-                              course.id,
-                            );
-                            await _reload();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+          : LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final double horizontalPadding = constraints.maxWidth < 420
+                    ? 12
+                    : 16;
+                return ListView.separated(
+                  padding: EdgeInsets.all(horizontalPadding),
+                  itemCount: _courses.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (BuildContext context, int index) {
+                    return _CourseManagementCard(
+                      course: _courses[index],
+                      compact: constraints.maxWidth < 560,
+                      onManageAccess: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                AdminCourseAccessPage(course: _courses[index]),
+                          ),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        _reload();
+                      },
+                      onOpenEditor: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AdminCourseEditorPage(
+                              courseId: _courses[index].id,
+                            ),
+                          ),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        _reload();
+                      },
+                      onEditDetails: () =>
+                          _showCourseForm(course: _courses[index]),
+                      onDelete: () async {
+                        await CourseService.instance.deleteCourse(
+                          _courses[index].id,
+                        );
+                        await _reload();
+                      },
+                    );
+                  },
                 );
               },
             ),
@@ -719,10 +702,7 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
     return TextFormField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixText: 'Rs ',
-      ),
+      decoration: InputDecoration(labelText: label, prefixText: 'Rs '),
       validator: (String? value) {
         final String raw = value?.trim() ?? '';
         if (raw.isEmpty) {
@@ -740,5 +720,221 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
   String _formatDateTime(DateTime dateTime) {
     String twoDigits(int value) => value.toString().padLeft(2, '0');
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${twoDigits(dateTime.hour)}:${twoDigits(dateTime.minute)}';
+  }
+}
+
+class _OfferEndsPicker extends StatelessWidget {
+  const _OfferEndsPicker({
+    required this.expiresAt,
+    required this.formattedValue,
+    required this.onChoose,
+    required this.onClear,
+  });
+
+  final DateTime? expiresAt;
+  final String formattedValue;
+  final VoidCallback onChoose;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.zero,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Icon(Icons.schedule_rounded),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text('Offer ends'),
+                const SizedBox(height: 2),
+                Text(
+                  formattedValue,
+                  style: TextStyle(color: Theme.of(context).hintColor),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: onChoose,
+                      child: const Text('Choose'),
+                    ),
+                    if (expiresAt != null)
+                      TextButton(
+                        onPressed: onClear,
+                        child: const Text('Clear'),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CourseManagementCard extends StatelessWidget {
+  const _CourseManagementCard({
+    required this.course,
+    required this.compact,
+    required this.onManageAccess,
+    required this.onOpenEditor,
+    required this.onEditDetails,
+    required this.onDelete,
+  });
+
+  final Course course;
+  final bool compact;
+  final VoidCallback onManageAccess;
+  final VoidCallback onOpenEditor;
+  final VoidCallback onEditDetails;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final String price =
+        (course.offer.isActive
+                ? course.offer.pricing.lowest
+                : (course.pricing.lowest > 0
+                      ? course.pricing.lowest
+                      : course.price))
+            .toStringAsFixed(0);
+    final String status =
+        '${course.isLocked ? 'Locked' : 'Unlocked'} • ${course.offer.isActive ? 'Offer live' : 'Regular pricing'} • Starts at Rs $price';
+    final String initial = course.title.isEmpty
+        ? '?'
+        : course.title.substring(0, 1).toUpperCase();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: compact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      CircleAvatar(child: Text(initial)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _CourseSummary(course: course, status: status),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _CourseActions(
+                    onManageAccess: onManageAccess,
+                    onOpenEditor: onOpenEditor,
+                    onEditDetails: onEditDetails,
+                    onDelete: onDelete,
+                  ),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  CircleAvatar(child: Text(initial)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _CourseSummary(course: course, status: status),
+                  ),
+                  const SizedBox(width: 12),
+                  _CourseActions(
+                    onManageAccess: onManageAccess,
+                    onOpenEditor: onOpenEditor,
+                    onEditDetails: onEditDetails,
+                    onDelete: onDelete,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _CourseSummary extends StatelessWidget {
+  const _CourseSummary({required this.course, required this.status});
+
+  final Course course;
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          course.title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(status, style: TextStyle(color: Theme.of(context).hintColor)),
+        if (course.description.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(
+            course.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CourseActions extends StatelessWidget {
+  const _CourseActions({
+    required this.onManageAccess,
+    required this.onOpenEditor,
+    required this.onEditDetails,
+    required this.onDelete,
+  });
+
+  final VoidCallback onManageAccess;
+  final VoidCallback onOpenEditor;
+  final VoidCallback onEditDetails;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.lock_person_outlined),
+          tooltip: 'Manage Access',
+          onPressed: onManageAccess,
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          tooltip: 'Edit Content',
+          onPressed: onOpenEditor,
+        ),
+        IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: 'Edit Details',
+          onPressed: onEditDetails,
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: 'Delete Course',
+          onPressed: onDelete,
+        ),
+      ],
+    );
   }
 }

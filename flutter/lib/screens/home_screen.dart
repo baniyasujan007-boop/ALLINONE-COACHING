@@ -184,24 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.quiz_rounded), label: 'Quiz'),
-          NavigationDestination(
-            icon: Icon(Icons.forum_outlined),
-            label: 'Community',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            label: 'AI Doubts',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: _HomeBottomNavigation(
         onDestinationSelected: (int idx) {
           if (idx == 1) {
             Navigator.of(
@@ -227,6 +210,69 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
       ),
+    );
+  }
+}
+
+class _HomeBottomNavigation extends StatelessWidget {
+  const _HomeBottomNavigation({required this.onDestinationSelected});
+
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final bool compact = constraints.maxWidth < 420;
+        return NavigationBarTheme(
+          data: NavigationBarThemeData(
+            height: compact ? 70 : 78,
+            labelBehavior: compact
+                ? NavigationDestinationLabelBehavior.onlyShowSelected
+                : NavigationDestinationLabelBehavior.alwaysShow,
+            labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+              Set<WidgetState> states,
+            ) {
+              final bool selected = states.contains(WidgetState.selected);
+              return TextStyle(
+                fontSize: compact ? 11 : 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              );
+            }),
+            iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
+              Set<WidgetState> states,
+            ) {
+              return IconThemeData(size: compact ? 22 : 24);
+            }),
+          ),
+          child: NavigationBar(
+            selectedIndex: 0,
+            onDestinationSelected: onDestinationSelected,
+            destinations: <NavigationDestination>[
+              const NavigationDestination(
+                icon: Icon(Icons.home_rounded),
+                label: 'Home',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.quiz_rounded),
+                label: 'Quiz',
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.forum_outlined),
+                label: compact ? 'Chat' : 'Community',
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.smart_toy_outlined),
+                label: compact ? 'AI' : 'AI Doubts',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_rounded),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

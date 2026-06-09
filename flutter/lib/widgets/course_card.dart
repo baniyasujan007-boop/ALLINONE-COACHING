@@ -92,6 +92,19 @@ class _CourseCardState extends State<CourseCard> {
                                 widget.course.thumbnail,
                                 fit: BoxFit.contain,
                                 alignment: Alignment.center,
+                                errorBuilder:
+                                    (
+                                      BuildContext context,
+                                      Object error,
+                                      StackTrace? stackTrace,
+                                    ) {
+                                      return const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported_outlined,
+                                          size: 40,
+                                        ),
+                                      );
+                                    },
                               ),
                             ),
                             DecoratedBox(
@@ -136,22 +149,22 @@ class _CourseCardState extends State<CourseCard> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                         Row(
-  children: <Widget>[
-    const Icon(
-      Icons.star_rounded,
-      color: Colors.amber,
-      size: 18,
-    ),
-    const SizedBox(width: 4),
-    Text(widget.course.rating.toStringAsFixed(1)),
-    const Spacer(),
-    Flexible(
-      child: Text(
-        '${widget.course.lessons.length} lessons',
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
+                          Row(
+                            children: <Widget>[
+                              const Icon(
+                                Icons.star_rounded,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(widget.course.rating.toStringAsFixed(1)),
+                              const Spacer(),
+                              Flexible(
+                                child: Text(
+                                  '${widget.course.lessons.length} lessons',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),

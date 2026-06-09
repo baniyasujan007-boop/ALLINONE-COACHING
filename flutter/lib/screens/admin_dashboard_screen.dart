@@ -233,11 +233,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           horizontalTitleGap: 12,
                           leading: Builder(
                             builder: (BuildContext context) {
-                              final Uri? uri = Uri.tryParse(course.thumbnail);
-                              final bool valid =
-                                  uri != null &&
-                                  uri.hasScheme &&
-                                  uri.host.isNotEmpty;
+                              final bool valid = course.thumbnail.isNotEmpty;
                               return CircleAvatar(
                                 radius: 22,
                                 backgroundImage: valid

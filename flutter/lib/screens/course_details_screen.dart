@@ -583,6 +583,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   course.thumbnail,
                   fit: BoxFit.contain,
                   alignment: Alignment.center,
+                  errorBuilder:
+                      (
+                        BuildContext context,
+                        Object error,
+                        StackTrace? stackTrace,
+                      ) {
+                        return const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 48,
+                          ),
+                        );
+                      },
                 ),
               ),
             ),
