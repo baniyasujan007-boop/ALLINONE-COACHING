@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
 const ensureDir = (dirPath) => {
   if (!fs.existsSync(dirPath)) {
@@ -8,6 +10,23 @@ const ensureDir = (dirPath) => {
   }
 };
 
+// Cloudinary Storage for Images
+const imageStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'coaching-app/thumbnails',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
+  },
+});
+
+const imageUpload = multer({
+  storage: imageStorage,
+  limits: {
+    fileSize: 25 * 1024 * 1024,
+  },
+});
+
+// Local Storage for PDFs and Files
 const makeUploader = ({
   folder,
   allowedMimeTypes,
@@ -27,18 +46,22 @@ const makeUploader = ({
 
   const fileFilter = (_req, file, cb) => {
     const ext = path.extname(file.originalname || '').toLowerCase();
+
     const mimeAllowed = allowedMimeTypes.includes(file.mimetype);
+
     const extAllowed =
       Array.isArray(allowedExtensions) &&
       allowedExtensions.includes(ext.replace('.', ''));
+
     const wildcardAllowed =
-      allowImageWildcard && typeof file.mimetype === 'string'
-        ? file.mimetype.startsWith('image/')
-        : false;
+      allowImageWildcard &&
+      typeof file.mimetype === 'string' &&
+      file.mimetype.startsWith('image/');
 
     if (mimeAllowed || extAllowed || wildcardAllowed) {
       return cb(null, true);
     }
+
     return cb(
       new Error(
         `Unsupported file type: ${file.mimetype || 'unknown'} (${ext || 'no extension'})`
@@ -49,24 +72,11 @@ const makeUploader = ({
   return multer({
     storage,
     fileFilter,
-    limits: { fileSize: 25 * 1024 * 1024 },
+    limits: {
+      fileSize: 25 * 1024 * 1024,
+    },
   });
 };
-
-const imageUpload = makeUploader({
-  folder: 'thumbnails',
-  allowedMimeTypes: [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/heic',
-    'image/heif',
-    'image/pjpeg',
-  ],
-  allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
-  allowImageWildcard: true,
-});
 
 const pdfUpload = makeUploader({
   folder: 'notes',

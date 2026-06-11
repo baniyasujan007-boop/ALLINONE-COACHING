@@ -221,7 +221,7 @@ exports.createCourse = async (req, res, next) => {
       lessons,
     } =
       req.body;
-    const thumbnailUrl = req.file ? toPublicUrl(req, req.file.path) : thumbnail;
+    const thumbnailUrl = req.file ? req.file.path : thumbnail;
     const safeInstructor =
       instructor || (req.user && req.user.name ? req.user.name : 'Instructor');
     const safePrice = price == null || price == '' ? 0 : price;
@@ -265,7 +265,7 @@ exports.updateCourse = async (req, res, next) => {
       updateData.isLocked = toLockedFlag(updateData.isLocked);
     }
     if (req.file) {
-      updateData.thumbnail = toPublicUrl(req, req.file.path);
+     updateData.thumbnail = req.file.path;
     }
 
     const updated = await Course.findByIdAndUpdate(req.params.id, updateData, {
