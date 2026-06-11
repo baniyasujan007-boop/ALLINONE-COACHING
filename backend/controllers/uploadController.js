@@ -1,10 +1,19 @@
 const path = require('path');
 
 const toPublicUrl = (req, filePath) => {
+  if (
+    typeof filePath === 'string' &&
+    (filePath.startsWith('http://') ||
+      filePath.startsWith('https://'))
+  ) {
+    return filePath;
+  }
+
   const normalized = filePath.split(path.sep).join('/');
   const marker = '/uploads/';
   const idx = normalized.lastIndexOf(marker);
   const suffix = idx >= 0 ? normalized.substring(idx + 1) : normalized;
+
   return `${req.protocol}://${req.get('host')}/${suffix}`;
 };
 
