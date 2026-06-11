@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/promotion.dart';
 import '../services/promotion_service.dart';
+import '../utils/edit_flow.dart';
 import '../widgets/animated_gradient_background.dart';
 import '../widgets/glass_card.dart';
 
@@ -62,23 +63,21 @@ class _AdminPromotionsScreenState extends State<AdminPromotionsScreen>
   }
 
   Future<void> _saveCoupon([CouponAdminItem? coupon]) async {
-    final Map<String, dynamic>? data = await showDialog<Map<String, dynamic>>(
+    final bool? updated = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => _CouponDialog(coupon: coupon),
+      builder: (BuildContext context) => _CouponDialog(
+        coupon: coupon,
+        onSubmit: (Map<String, dynamic> data) async {
+          if (coupon == null) {
+            await PromotionService.instance.createCoupon(data);
+          } else {
+            await PromotionService.instance.updateCoupon(coupon.id, data);
+          }
+        },
+      ),
     );
-    if (data == null) return;
-    try {
-      if (coupon == null) {
-        await PromotionService.instance.createCoupon(data);
-      } else {
-        await PromotionService.instance.updateCoupon(coupon.id, data);
-      }
+    if (updated == true && mounted) {
       await _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -114,19 +113,21 @@ class _AdminPromotionsScreenState extends State<AdminPromotionsScreen>
     }
   }
 
-  Future<void> _saveReferralSettings(ReferralSettings settings) async {
+  Future<bool> _saveReferralSettings(ReferralSettings settings) async {
     try {
       await PromotionService.instance.updateReferralSettings(settings);
       await _load();
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Referral rules updated')));
+      ).showSnackBar(const SnackBar(content: Text('Updated successfully')));
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+      return false;
     }
   }
 
@@ -258,7 +259,7 @@ class _ReferralRulesTab extends StatefulWidget {
   const _ReferralRulesTab({required this.settings, required this.onSave});
 
   final ReferralSettings settings;
-  final ValueChanged<ReferralSettings> onSave;
+  final Future<bool> Function(ReferralSettings) onSave;
 
   @override
   State<_ReferralRulesTab> createState() => _ReferralRulesTabState();
@@ -275,6 +276,8 @@ class _ReferralRulesTabState extends State<_ReferralRulesTab> {
   late final TextEditingController _maxByUser;
   late final TextEditingController _maxByCode;
   late final TextEditingController _maxByIp;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -317,111 +320,149 @@ class _ReferralRulesTabState extends State<_ReferralRulesTab> {
   int _int(TextEditingController controller) =>
       int.tryParse(controller.text.trim()) ?? 0;
 
+  String? _numberValidator(String? value) {
+    final String raw = value?.trim() ?? '';
+    if (raw.isEmpty) {
+      return 'Required';
+    }
+    final num? parsed = num.tryParse(raw);
+    if (parsed == null || parsed < 0) {
+      return 'Enter a valid number';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: <Widget>[
-        GlassCard(
-          child: Column(
-            children: <Widget>[
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Referral rewards enabled'),
-                value: _enabled,
-                onChanged: (bool value) => setState(() => _enabled = value),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('First purchase only'),
-                value: _firstPurchaseOnly,
-                onChanged: (bool value) =>
-                    setState(() => _firstPurchaseOnly = value),
-              ),
-              const SizedBox(height: 8),
-              _RewardEditor(
-                title: 'Student discount',
-                type: _refereeType,
-                controller: _refereeValue,
-                onTypeChanged: (String value) =>
-                    setState(() => _refereeType = value),
-              ),
-              const SizedBox(height: 12),
-              _RewardEditor(
-                title: 'Referrer reward',
-                type: _referrerType,
-                controller: _referrerValue,
-                onTypeChanged: (String value) =>
-                    setState(() => _referrerType = value),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _minOrder,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Minimum order amount',
-                  prefixIcon: Icon(Icons.payments_rounded),
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: <Widget>[
+          GlassCard(
+            child: Column(
+              children: <Widget>[
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Referral rewards enabled'),
+                  value: _enabled,
+                  onChanged: (bool value) => setState(() => _enabled = value),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        GlassCard(
-          child: Column(
-            children: <Widget>[
-              TextField(
-                controller: _maxByUser,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Max successful referrals per user',
-                  prefixIcon: Icon(Icons.person_pin_circle_rounded),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('First purchase only'),
+                  value: _firstPurchaseOnly,
+                  onChanged: (bool value) =>
+                      setState(() => _firstPurchaseOnly = value),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _maxByCode,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Max uses per referral code',
-                  prefixIcon: Icon(Icons.qr_code_rounded),
+                const SizedBox(height: 8),
+                _RewardEditor(
+                  title: 'Student discount',
+                  type: _refereeType,
+                  controller: _refereeValue,
+                  onTypeChanged: (String value) =>
+                      setState(() => _refereeType = value),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _maxByIp,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Max rewards per network',
-                  prefixIcon: Icon(Icons.security_rounded),
+                const SizedBox(height: 12),
+                _RewardEditor(
+                  title: 'Referrer reward',
+                  type: _referrerType,
+                  controller: _referrerValue,
+                  onTypeChanged: (String value) =>
+                      setState(() => _referrerType = value),
                 ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => widget.onSave(
-                    ReferralSettings(
-                      enabled: _enabled,
-                      refereeRewardType: _refereeType,
-                      refereeRewardValue: _double(_refereeValue),
-                      referrerRewardType: _referrerType,
-                      referrerRewardValue: _double(_referrerValue),
-                      minOrderAmount: _double(_minOrder),
-                      firstPurchaseOnly: _firstPurchaseOnly,
-                      maxSuccessfulReferralsPerUser: _int(_maxByUser),
-                      maxUsesPerCode: _int(_maxByCode),
-                      maxRewardsPerIp: _int(_maxByIp),
-                    ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _minOrder,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Minimum order amount',
+                    prefixIcon: Icon(Icons.payments_rounded),
                   ),
-                  icon: const Icon(Icons.save_rounded),
-                  label: const Text('Save Rules'),
+                  validator: _numberValidator,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          GlassCard(
+            child: Column(
+              children: <Widget>[
+                TextFormField(
+                  controller: _maxByUser,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Max successful referrals per user',
+                    prefixIcon: Icon(Icons.person_pin_circle_rounded),
+                  ),
+                  validator: _numberValidator,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _maxByCode,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Max uses per referral code',
+                    prefixIcon: Icon(Icons.qr_code_rounded),
+                  ),
+                  validator: _numberValidator,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _maxByIp,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Max rewards per network',
+                    prefixIcon: Icon(Icons.security_rounded),
+                  ),
+                  validator: _numberValidator,
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _submitting
+                        ? null
+                        : () async {
+                            if (!(_formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+                            setState(() => _submitting = true);
+                            final bool ok = await widget.onSave(
+                              ReferralSettings(
+                                enabled: _enabled,
+                                refereeRewardType: _refereeType,
+                                refereeRewardValue: _double(_refereeValue),
+                                referrerRewardType: _referrerType,
+                                referrerRewardValue: _double(_referrerValue),
+                                minOrderAmount: _double(_minOrder),
+                                firstPurchaseOnly: _firstPurchaseOnly,
+                                maxSuccessfulReferralsPerUser: _int(_maxByUser),
+                                maxUsesPerCode: _int(_maxByCode),
+                                maxRewardsPerIp: _int(_maxByIp),
+                              ),
+                            );
+                            if (!context.mounted) return;
+                            setState(() => _submitting = false);
+                            if (ok && Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop(true);
+                            }
+                          },
+                    icon: _submitting
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_rounded),
+                    label: Text(_submitting ? 'Saving...' : 'Save Rules'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -495,10 +536,19 @@ class _RewardEditor extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: TextField(
+          child: TextFormField(
             controller: controller,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(labelText: title),
+            validator: (String? value) {
+              final String raw = value?.trim() ?? '';
+              if (raw.isEmpty) return 'Required';
+              final num? parsed = num.tryParse(raw);
+              if (parsed == null || parsed < 0) {
+                return 'Enter a valid number';
+              }
+              return null;
+            },
           ),
         ),
         const SizedBox(width: 10),
@@ -518,9 +568,10 @@ class _RewardEditor extends StatelessWidget {
 }
 
 class _CouponDialog extends StatefulWidget {
-  const _CouponDialog({this.coupon});
+  const _CouponDialog({this.coupon, required this.onSubmit});
 
   final CouponAdminItem? coupon;
+  final Future<void> Function(Map<String, dynamic> data) onSubmit;
 
   @override
   State<_CouponDialog> createState() => _CouponDialogState();
@@ -535,6 +586,8 @@ class _CouponDialogState extends State<_CouponDialog> {
   late final TextEditingController _minOrder;
   late String _type;
   late bool _active;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -577,110 +630,155 @@ class _CouponDialogState extends State<_CouponDialog> {
   int _int(TextEditingController controller) =>
       int.tryParse(controller.text.trim()) ?? 0;
 
+  String? _numberValidator(String? value) {
+    final String raw = value?.trim() ?? '';
+    if (raw.isEmpty) return 'Required';
+    final num? parsed = num.tryParse(raw);
+    if (parsed == null || parsed < 0) {
+      return 'Enter a valid number';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.coupon == null ? 'Create Coupon' : 'Edit Coupon'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextField(
-              controller: _code,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(labelText: 'Code'),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _value,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Value'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                DropdownButton<String>(
-                  value: _type,
-                  items: const <DropdownMenuItem<String>>[
-                    DropdownMenuItem<String>(value: 'flat', child: Text('Rs')),
-                    DropdownMenuItem<String>(
-                      value: 'percent',
-                      child: Text('%'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                controller: _code,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(labelText: 'Code'),
+                validator: (String? value) =>
+                    value == null || value.trim().isEmpty
+                    ? 'Coupon code is required'
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextFormField(
+                      controller: _value,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Value'),
+                      validator: _numberValidator,
                     ),
-                  ],
-                  onChanged: (String? value) {
-                    if (value != null) setState(() => _type = value);
-                  },
+                  ),
+                  const SizedBox(width: 10),
+                  DropdownButton<String>(
+                    value: _type,
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem<String>(
+                        value: 'flat',
+                        child: Text('Rs'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: 'percent',
+                        child: Text('%'),
+                      ),
+                    ],
+                    onChanged: (String? value) {
+                      if (value != null) setState(() => _type = value);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _expiry,
+                decoration: const InputDecoration(
+                  labelText: 'Expiry date',
+                  hintText: 'YYYY-MM-DD',
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _expiry,
-              decoration: const InputDecoration(
-                labelText: 'Expiry date',
-                hintText: 'YYYY-MM-DD',
+                validator: (String? value) {
+                  final String raw = value?.trim() ?? '';
+                  if (raw.isEmpty) return null;
+                  return DateTime.tryParse(raw) == null
+                      ? 'Enter a valid date'
+                      : null;
+                },
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _maxRedemptions,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Max redemptions'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _perUserLimit,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Per user limit'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _minOrder,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Minimum order amount',
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _maxRedemptions,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Max redemptions'),
+                validator: _numberValidator,
               ),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Active'),
-              value: _active,
-              onChanged: (bool value) => setState(() => _active = value),
-            ),
-          ],
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _perUserLimit,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Per user limit'),
+                validator: _numberValidator,
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _minOrder,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Minimum order amount',
+                ),
+                validator: _numberValidator,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Active'),
+                value: _active,
+                onChanged: (bool value) => setState(() => _active = value),
+              ),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _submitting
+              ? null
+              : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () {
-            final String code = _code.text.trim().toUpperCase();
-            if (code.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Coupon code is required')),
-              );
-              return;
-            }
-            Navigator.of(context).pop(<String, dynamic>{
-              'code': code,
-              'type': _type,
-              'value': _double(_value),
-              'expiresAt': _expiry.text.trim().isEmpty
-                  ? null
-                  : DateTime.tryParse(_expiry.text.trim())?.toIso8601String(),
-              'maxRedemptions': _int(_maxRedemptions),
-              'perUserLimit': _int(_perUserLimit),
-              'minOrderAmount': _double(_minOrder),
-              'isActive': _active,
-            });
-          },
-          child: const Text('Save'),
+          onPressed: _submitting
+              ? null
+              : () async {
+                  await submitEditableForm(
+                    context: context,
+                    formKey: _formKey,
+                    setLoading: (bool value) {
+                      setState(() => _submitting = value);
+                    },
+                    submit: () async {
+                      await widget.onSubmit(<String, dynamic>{
+                        'code': _code.text.trim().toUpperCase(),
+                        'type': _type,
+                        'value': _double(_value),
+                        'expiresAt': _expiry.text.trim().isEmpty
+                            ? null
+                            : DateTime.tryParse(
+                                _expiry.text.trim(),
+                              )?.toIso8601String(),
+                        'maxRedemptions': _int(_maxRedemptions),
+                        'perUserLimit': _int(_perUserLimit),
+                        'minOrderAmount': _double(_minOrder),
+                        'isActive': _active,
+                      });
+                    },
+                  );
+                },
+          child: _submitting
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save'),
         ),
       ],
     );

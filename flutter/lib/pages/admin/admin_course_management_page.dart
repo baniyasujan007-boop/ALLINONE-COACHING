@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import '../../models/course.dart';
 import '../../services/auth_service.dart';
 import '../../services/course_service.dart';
+import '../../utils/edit_flow.dart';
 import 'admin_course_access_page.dart';
 import 'admin_course_editor_page.dart';
 
@@ -105,6 +106,7 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool openContentEditorAfterSave = course == null;
     bool uploadingThumbnail = false;
+    bool submitting = false;
     bool isLocked = course?.isLocked ?? true;
     bool offerEnabled = course?.offer.isActive ?? false;
     DateTime? offerExpiresAt = course?.offer.expiresAt;
@@ -154,7 +156,7 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
       }
     }
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext dialogContext, StateSetter setStateDialog) {
@@ -484,132 +486,170 @@ class _AdminCourseManagementPageState extends State<AdminCourseManagementPage> {
             ),
             actions: <Widget>[
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: submitting
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  if (!(formKey.currentState?.validate() ?? false)) {
-                    return;
-                  }
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        await submitEditableForm(
+                          context: dialogContext,
+                          formKey: formKey,
+                          setLoading: (bool value) {
+                            setStateDialog(() => submitting = value);
+                          },
+                          submit: () async {
+                            final String title = titleController.text.trim();
+                            final String description = descController.text
+                                .trim();
+                            final String thumbnailUrl = thumbnailController.text
+                                .trim();
+                            final double fallbackPrice =
+                                double.tryParse(priceController.text.trim()) ??
+                                0;
+                            final CoursePricing pricing = CoursePricing(
+                              monthly:
+                                  double.tryParse(
+                                    monthlyPriceController.text.trim(),
+                                  ) ??
+                                  0,
+                              quarterly:
+                                  double.tryParse(
+                                    quarterlyPriceController.text.trim(),
+                                  ) ??
+                                  0,
+                              semiAnnual:
+                                  double.tryParse(
+                                    semiAnnualPriceController.text.trim(),
+                                  ) ??
+                                  0,
+                              yearly:
+                                  double.tryParse(
+                                    yearlyPriceController.text.trim(),
+                                  ) ??
+                                  0,
+                            );
+                            final CourseOffer offer = offerEnabled
+                                ? CourseOffer(
+                                    title: offerTitleController.text.trim(),
+                                    pricing: CoursePricing(
+                                      monthly:
+                                          double.tryParse(
+                                            offerMonthlyPriceController.text
+                                                .trim(),
+                                          ) ??
+                                          0,
+                                      quarterly:
+                                          double.tryParse(
+                                            offerQuarterlyPriceController.text
+                                                .trim(),
+                                          ) ??
+                                          0,
+                                      semiAnnual:
+                                          double.tryParse(
+                                            offerSemiAnnualPriceController.text
+                                                .trim(),
+                                          ) ??
+                                          0,
+                                      yearly:
+                                          double.tryParse(
+                                            offerYearlyPriceController.text
+                                                .trim(),
+                                          ) ??
+                                          0,
+                                    ),
+                                    expiresAt: offerExpiresAt,
+                                  )
+                                : const CourseOffer();
+                            final double price = pricing.lowest > 0
+                                ? pricing.lowest
+                                : fallbackPrice;
 
-                  final String title = titleController.text.trim();
-                  final String description = descController.text.trim();
-                  final String thumbnailUrl = thumbnailController.text.trim();
-                  final double fallbackPrice =
-                      double.tryParse(priceController.text.trim()) ?? 0;
-                  final CoursePricing pricing = CoursePricing(
-                    monthly:
-                        double.tryParse(monthlyPriceController.text.trim()) ??
-                        0,
-                    quarterly:
-                        double.tryParse(quarterlyPriceController.text.trim()) ??
-                        0,
-                    semiAnnual:
-                        double.tryParse(
-                          semiAnnualPriceController.text.trim(),
-                        ) ??
-                        0,
-                    yearly:
-                        double.tryParse(yearlyPriceController.text.trim()) ?? 0,
-                  );
-                  final CourseOffer offer = offerEnabled
-                      ? CourseOffer(
-                          title: offerTitleController.text.trim(),
-                          pricing: CoursePricing(
-                            monthly:
-                                double.tryParse(
-                                  offerMonthlyPriceController.text.trim(),
-                                ) ??
-                                0,
-                            quarterly:
-                                double.tryParse(
-                                  offerQuarterlyPriceController.text.trim(),
-                                ) ??
-                                0,
-                            semiAnnual:
-                                double.tryParse(
-                                  offerSemiAnnualPriceController.text.trim(),
-                                ) ??
-                                0,
-                            yearly:
-                                double.tryParse(
-                                  offerYearlyPriceController.text.trim(),
-                                ) ??
-                                0,
-                          ),
-                          expiresAt: offerExpiresAt,
-                        )
-                      : const CourseOffer();
-                  final double price = pricing.lowest > 0
-                      ? pricing.lowest
-                      : fallbackPrice;
-
-                  if (course == null) {
-                    await CourseService.instance.addCourse(
-                      title: title,
-                      description: description,
-                      thumbnailUrl: thumbnailUrl,
-                      price: price,
-                      pricing: pricing,
-                      offer: offer,
-                      isLocked: isLocked,
-                    );
-                  } else {
-                    await CourseService.instance.updateCourse(
-                      courseId: course.id,
-                      title: title,
-                      description: description,
-                      thumbnailUrl: thumbnailUrl,
-                      price: price,
-                      pricing: pricing,
-                      offer: offer,
-                      isLocked: isLocked,
-                    );
-                  }
-
-                  if (!dialogContext.mounted) return;
-                  Navigator.pop(dialogContext);
-                  await _reload();
-
-                  if (!mounted ||
-                      !openContentEditorAfterSave ||
-                      course != null) {
-                    return;
-                  }
-
-                  Course? created;
-                  for (final Course c in _courses) {
-                    if (c.title == title &&
-                        c.description == description &&
-                        c.thumbnailUrl == thumbnailUrl &&
-                        c.price == price &&
-                        c.isLocked == isLocked) {
-                      created = c;
-                      break;
-                    }
-                  }
-                  created ??= _courses.isEmpty ? null : _courses.first;
-                  if (created == null) return;
-                  final Course createdCourse = created;
-
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          AdminCourseEditorPage(courseId: createdCourse.id),
-                    ),
-                  );
-                  if (!mounted) return;
-                  _reload();
-                },
-                child: const Text('Save'),
+                            if (course == null) {
+                              await CourseService.instance.addCourse(
+                                title: title,
+                                description: description,
+                                thumbnailUrl: thumbnailUrl,
+                                price: price,
+                                pricing: pricing,
+                                offer: offer,
+                                isLocked: isLocked,
+                              );
+                            } else {
+                              await CourseService.instance.updateCourse(
+                                courseId: course.id,
+                                title: title,
+                                description: description,
+                                thumbnailUrl: thumbnailUrl,
+                                price: price,
+                                pricing: pricing,
+                                offer: offer,
+                                isLocked: isLocked,
+                              );
+                            }
+                          },
+                        );
+                      },
+                child: submitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
               ),
             ],
           );
         },
       ),
     );
+    if (updated != true || !mounted) {
+      return;
+    }
+
+    await _reload();
+    if (!mounted || !openContentEditorAfterSave || course != null) {
+      return;
+    }
+
+    final String title = titleController.text.trim();
+    final String description = descController.text.trim();
+    final String thumbnailUrl = thumbnailController.text.trim();
+    final double fallbackPrice =
+        double.tryParse(priceController.text.trim()) ?? 0;
+    final CoursePricing pricing = CoursePricing(
+      monthly: double.tryParse(monthlyPriceController.text.trim()) ?? 0,
+      quarterly: double.tryParse(quarterlyPriceController.text.trim()) ?? 0,
+      semiAnnual: double.tryParse(semiAnnualPriceController.text.trim()) ?? 0,
+      yearly: double.tryParse(yearlyPriceController.text.trim()) ?? 0,
+    );
+    final double price = pricing.lowest > 0 ? pricing.lowest : fallbackPrice;
+    Course? created;
+    for (final Course c in _courses) {
+      if (c.title == title &&
+          c.description == description &&
+          c.thumbnailUrl == thumbnailUrl &&
+          c.price == price &&
+          c.isLocked == isLocked) {
+        created = c;
+        break;
+      }
+    }
+    created ??= _courses.isEmpty ? null : _courses.first;
+    if (created == null) return;
+    final Course createdCourse = created;
+
+    final bool? editorUpdated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        builder: (_) => AdminCourseEditorPage(courseId: createdCourse.id),
+      ),
+    );
+    if (!mounted || editorUpdated != true) return;
+    await _reload();
   }
 
   @override

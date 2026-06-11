@@ -4,6 +4,7 @@ import '../models/course.dart';
 import '../models/admin_user.dart';
 import '../services/auth_service.dart';
 import '../services/course_service.dart';
+import '../utils/edit_flow.dart';
 import '../widgets/animated_gradient_background.dart';
 import '../widgets/glass_card.dart';
 
@@ -68,149 +69,171 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final Set<String> enrolledCourseIds = user.purchasedPackages
         .map((AdminPurchasedPackage pkg) => pkg.id)
         .toSet();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    bool submitting = false;
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return AlertDialog(
               title: const Text('Edit User'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    TextField(
-                      controller: name,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: email,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: role,
-                      decoration: const InputDecoration(labelText: 'Role'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'student',
-                          child: Text('student'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: name,
+                        decoration: const InputDecoration(labelText: 'Name'),
+                        validator: (String? value) =>
+                            value == null || value.trim().isEmpty
+                            ? 'Name is required'
+                            : null,
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'Email'),
+                        validator: (String? value) =>
+                            value == null || !value.contains('@')
+                            ? 'Enter valid email'
+                            : null,
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: role,
+                        decoration: const InputDecoration(labelText: 'Role'),
+                        items: const <DropdownMenuItem<String>>[
+                          DropdownMenuItem(
+                            value: 'student',
+                            child: Text('student'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'admin',
+                            child: Text('admin'),
+                          ),
+                        ],
+                        onChanged: (String? value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setModalState(() => role = value);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: phone,
+                        decoration: const InputDecoration(labelText: 'Phone'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: address,
+                        maxLines: 2,
+                        decoration: const InputDecoration(labelText: 'Address'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: profileImage,
+                        decoration: const InputDecoration(
+                          labelText: 'Profile image URL',
                         ),
-                        DropdownMenuItem(value: 'admin', child: Text('admin')),
-                      ],
-                      onChanged: (String? value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setModalState(() => role = value);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: phone,
-                      decoration: const InputDecoration(labelText: 'Phone'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: address,
-                      maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Address'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: profileImage,
-                      decoration: const InputDecoration(
-                        labelText: 'Profile image URL',
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Course Access',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (_courses.isEmpty)
-                      const Align(
+                      const SizedBox(height: 14),
+                      Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('No courses available yet.'),
-                      )
-                    else
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _courses.map((Course course) {
-                          final bool selected = enrolledCourseIds.contains(
-                            course.id,
-                          );
-                          final double displayPrice = course.offer.isActive
-                              ? (course.offer.pricing.lowest > 0
-                                    ? course.offer.pricing.lowest
-                                    : course.price)
-                              : (course.pricing.lowest > 0
-                                    ? course.pricing.lowest
-                                    : course.price);
-                          final String priceLabel = displayPrice <= 0
-                              ? 'Free'
-                              : 'Rs ${displayPrice.toStringAsFixed(0)}';
-                          final String label = course.isLocked
-                              ? '${course.title} • $priceLabel • Locked'
-                              : '${course.title} • $priceLabel • Open';
-                          return FilterChip(
-                            selected: selected,
-                            label: Text(label),
-                            onSelected: (bool value) {
-                              setModalState(() {
-                                if (value) {
-                                  enrolledCourseIds.add(course.id);
-                                } else {
-                                  enrolledCourseIds.remove(course.id);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
+                        child: Text(
+                          'Course Access',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
                       ),
-                  ],
+                      const SizedBox(height: 8),
+                      if (_courses.isEmpty)
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('No courses available yet.'),
+                        )
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _courses.map((Course course) {
+                            final bool selected = enrolledCourseIds.contains(
+                              course.id,
+                            );
+                            final double displayPrice = course.offer.isActive
+                                ? (course.offer.pricing.lowest > 0
+                                      ? course.offer.pricing.lowest
+                                      : course.price)
+                                : (course.pricing.lowest > 0
+                                      ? course.pricing.lowest
+                                      : course.price);
+                            final String priceLabel = displayPrice <= 0
+                                ? 'Free'
+                                : 'Rs ${displayPrice.toStringAsFixed(0)}';
+                            final String label = course.isLocked
+                                ? '${course.title} • $priceLabel • Locked'
+                                : '${course.title} • $priceLabel • Open';
+                            return FilterChip(
+                              selected: selected,
+                              label: Text(label),
+                              onSelected: (bool value) {
+                                setModalState(() {
+                                  if (value) {
+                                    enrolledCourseIds.add(course.id);
+                                  } else {
+                                    enrolledCourseIds.remove(course.id);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.of(context).pop(false),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed: () async {
-                    try {
-                      await AuthService.instance.updateUserByAdmin(
-                        userId: user.id,
-                        name: name.text,
-                        email: email.text,
-                        role: role,
-                        phone: phone.text,
-                        address: address.text,
-                        profileImage: profileImage.text,
-                        enrolledCourseIds: enrolledCourseIds.toList(),
-                      );
-                      if (!context.mounted) {
-                        return;
-                      }
-                      Navigator.of(context).pop();
-                      await _loadUsers();
-                    } catch (e) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(e.toString())));
-                    }
-                  },
-                  child: const Text('Save'),
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          await submitEditableForm(
+                            context: context,
+                            formKey: formKey,
+                            setLoading: (bool value) {
+                              setModalState(() => submitting = value);
+                            },
+                            submit: () async {
+                              await AuthService.instance.updateUserByAdmin(
+                                userId: user.id,
+                                name: name.text,
+                                email: email.text,
+                                role: role,
+                                phone: phone.text,
+                                address: address.text,
+                                profileImage: profileImage.text,
+                                enrolledCourseIds: enrolledCourseIds.toList(),
+                              );
+                            },
+                          );
+                        },
+                  child: submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             );
@@ -218,6 +241,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         );
       },
     );
+    if (updated == true && mounted) {
+      await _loadUsers();
+    }
 
     name.dispose();
     email.dispose();

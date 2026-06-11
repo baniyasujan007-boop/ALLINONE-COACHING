@@ -30,12 +30,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _openCourseManager() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         builder: (_) => const AdminCourseManagementPage(),
       ),
     );
     if (!mounted) return;
+    await context.read<AppState>().loadCourses(withDetails: false);
+  }
+
+  Future<void> _openProfile() async {
+    final bool? updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => const ProfileScreen()),
+    );
+    if (!mounted || updated != true) {
+      return;
+    }
+    await context.read<AppState>().refreshProfile();
+  }
+
+  Future<void> _openAndRefresh(Widget screen) async {
+    final bool? updated = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute<bool>(builder: (_) => screen));
+    if (!mounted || updated != true) {
+      return;
+    }
     await context.read<AppState>().loadCourses(withDetails: false);
   }
 
@@ -49,22 +69,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         title: 'Admin Dashboard',
         titleWidget: const _AdminAppBarTitle(),
         actions: <Widget>[
-          UserAvatarButton(
-            user: appState.currentUser,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
-            ),
-          ),
+          UserAvatarButton(user: appState.currentUser, onTap: _openProfile),
           PopupMenuButton<_AdminMenuAction>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (_AdminMenuAction action) async {
               switch (action) {
                 case _AdminMenuAction.users:
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AdminUsersScreen(),
-                    ),
-                  );
+                  _openAndRefresh(const AdminUsersScreen());
                 case _AdminMenuAction.courses:
                   _openCourseManager();
                 case _AdminMenuAction.payments:
@@ -74,11 +85,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   );
                 case _AdminMenuAction.promotions:
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const AdminPromotionsScreen(),
-                    ),
-                  );
+                  _openAndRefresh(const AdminPromotionsScreen());
                 case _AdminMenuAction.logout:
                   await context.read<AppState>().logout();
                   if (!context.mounted) {
@@ -210,11 +217,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                           ),
                           FilledButton(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const AdminPromotionsScreen(),
-                              ),
-                            ),
+                            onPressed: () =>
+                                _openAndRefresh(const AdminPromotionsScreen()),
                             child: const Text('Open'),
                           ),
                         ],

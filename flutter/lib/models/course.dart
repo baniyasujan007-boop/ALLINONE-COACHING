@@ -25,7 +25,10 @@ class CoursePricing {
     return values.first;
   }
 
-  factory CoursePricing.fromApi(Map<String, dynamic>? json, {double fallback = 0}) {
+  factory CoursePricing.fromApi(
+    Map<String, dynamic>? json, {
+    double fallback = 0,
+  }) {
     final CoursePricing pricing = CoursePricing(
       monthly: (json?['monthly'] is num)
           ? (json!['monthly'] as num).toDouble()
@@ -79,7 +82,9 @@ class CourseOffer {
 
   factory CourseOffer.fromApi(Map<String, dynamic>? json) {
     final String rawDate = (json?['expiresAt'] ?? '').toString();
-    final DateTime? expiresAt = rawDate.isEmpty ? null : DateTime.tryParse(rawDate);
+    final DateTime? expiresAt = rawDate.isEmpty
+        ? null
+        : DateTime.tryParse(rawDate);
     return CourseOffer(
       title: (json?['title'] ?? '').toString(),
       pricing: CoursePricing.fromApi(json?['pricing'] as Map<String, dynamic>?),
@@ -88,11 +93,14 @@ class CourseOffer {
   }
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
+    final Map<String, dynamic> json = <String, dynamic>{
       'title': title,
       'pricing': pricing.toJson(),
-      'expiresAt': expiresAt?.toIso8601String(),
     };
+    if (expiresAt != null) {
+      json['expiresAt'] = expiresAt!.toIso8601String();
+    }
+    return json;
   }
 }
 

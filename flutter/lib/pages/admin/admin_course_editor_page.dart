@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import '../../models/course.dart';
 import '../../services/course_service.dart';
+import '../../utils/edit_flow.dart';
 
 class AdminCourseEditorPage extends StatefulWidget {
   const AdminCourseEditorPage({super.key, required this.courseId});
@@ -161,8 +162,9 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
     );
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool uploadingThumbnail = false;
+    bool submitting = false;
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext dialogContext, StateSetter setStateDialog) =>
@@ -271,34 +273,51 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
               ),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (!(formKey.currentState?.validate() ?? false)) {
-                      return;
-                    }
-                    await CourseService.instance.updateCourse(
-                      courseId: widget.courseId,
-                      title: titleController.text.trim(),
-                      description: descController.text.trim(),
-                      thumbnailUrl: thumbnailController.text.trim(),
-                      price: _course?.price ?? 0,
-                      pricing: _course?.pricing ?? const CoursePricing(),
-                      offer: _course?.offer ?? const CourseOffer(),
-                      isLocked: _course?.isLocked ?? false,
-                    );
-                    if (!dialogContext.mounted) return;
-                    Navigator.pop(dialogContext);
-                    _reload();
-                  },
-                  child: const Text('Save'),
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          await submitEditableForm(
+                            context: dialogContext,
+                            formKey: formKey,
+                            setLoading: (bool value) {
+                              setStateDialog(() => submitting = value);
+                            },
+                            submit: () async {
+                              await CourseService.instance.updateCourse(
+                                courseId: widget.courseId,
+                                title: titleController.text.trim(),
+                                description: descController.text.trim(),
+                                thumbnailUrl: thumbnailController.text.trim(),
+                                price: _course?.price ?? 0,
+                                pricing:
+                                    _course?.pricing ?? const CoursePricing(),
+                                offer: _course?.offer ?? const CourseOffer(),
+                                isLocked: _course?.isLocked ?? false,
+                              );
+                            },
+                          );
+                        },
+                  child: submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             ),
       ),
     );
+    if (updated == true && mounted) {
+      await _reload();
+    }
   }
 
   Future<void> _reload() async {
@@ -450,8 +469,9 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
     );
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool uploading = false;
+    bool submitting = false;
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setStateDialog) =>
@@ -541,33 +561,49 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
               ),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (!(formKey.currentState?.validate() ?? false)) {
-                      return;
-                    }
-                    await CourseService.instance.updateLesson(
-                      courseId: widget.courseId,
-                      lessonId: lesson.id,
-                      title: titleController.text.trim(),
-                      videoUrl: urlController.text.trim(),
-                      durationMinutes: int.parse(
-                        durationController.text.trim(),
-                      ),
-                    );
-                    if (!dialogContext.mounted) return;
-                    Navigator.pop(dialogContext);
-                    _reload();
-                  },
-                  child: const Text('Save'),
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          await submitEditableForm(
+                            context: dialogContext,
+                            formKey: formKey,
+                            setLoading: (bool value) {
+                              setStateDialog(() => submitting = value);
+                            },
+                            submit: () async {
+                              await CourseService.instance.updateLesson(
+                                courseId: widget.courseId,
+                                lessonId: lesson.id,
+                                title: titleController.text.trim(),
+                                videoUrl: urlController.text.trim(),
+                                durationMinutes: int.parse(
+                                  durationController.text.trim(),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                  child: submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             ),
       ),
     );
+    if (updated == true && mounted) {
+      await _reload();
+    }
   }
 
   Future<void> _deleteLesson(VideoLesson lesson) async {
@@ -721,8 +757,9 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
     );
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     bool uploading = false;
+    bool submitting = false;
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setStateDialog) =>
@@ -806,30 +843,46 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
               ),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                  onPressed: submitting
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (!(formKey.currentState?.validate() ?? false)) {
-                      return;
-                    }
-                    await CourseService.instance.updateStudyMaterial(
-                      courseId: widget.courseId,
-                      materialId: material.id,
-                      title: titleController.text.trim(),
-                      fileUrl: urlController.text.trim(),
-                    );
-                    if (!dialogContext.mounted) return;
-                    Navigator.pop(dialogContext);
-                    _reload();
-                  },
-                  child: const Text('Save'),
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          await submitEditableForm(
+                            context: dialogContext,
+                            formKey: formKey,
+                            setLoading: (bool value) {
+                              setStateDialog(() => submitting = value);
+                            },
+                            submit: () async {
+                              await CourseService.instance.updateStudyMaterial(
+                                courseId: widget.courseId,
+                                materialId: material.id,
+                                title: titleController.text.trim(),
+                                fileUrl: urlController.text.trim(),
+                              );
+                            },
+                          );
+                        },
+                  child: submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             ),
       ),
     );
+    if (updated == true && mounted) {
+      await _reload();
+    }
   }
 
   Future<void> _deleteMaterial(StudyMaterial material) async {
@@ -969,8 +1022,9 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
         });
     int correctIndex = question.correctIndex;
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    bool submitting = false;
 
-    await showDialog<void>(
+    final bool? updated = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
         builder: (BuildContext context, StateSetter setStateDialog) {
@@ -1031,35 +1085,53 @@ class _AdminCourseEditorPageState extends State<AdminCourseEditorPage> {
             ),
             actions: <Widget>[
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: submitting
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  if (!(formKey.currentState?.validate() ?? false)) {
-                    return;
-                  }
-                  await CourseService.instance.updateQuizQuestion(
-                    courseId: widget.courseId,
-                    quizId: question.quizId,
-                    questionIndex: question.questionIndex,
-                    question: questionController.text.trim(),
-                    options: optionControllers
-                        .map((TextEditingController c) => c.text.trim())
-                        .toList(),
-                    correctIndex: correctIndex,
-                  );
-                  if (!dialogContext.mounted) return;
-                  Navigator.pop(dialogContext);
-                  _reload();
-                },
-                child: const Text('Save'),
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        await submitEditableForm(
+                          context: dialogContext,
+                          formKey: formKey,
+                          setLoading: (bool value) {
+                            setStateDialog(() => submitting = value);
+                          },
+                          submit: () async {
+                            await CourseService.instance.updateQuizQuestion(
+                              courseId: widget.courseId,
+                              quizId: question.quizId,
+                              questionIndex: question.questionIndex,
+                              question: questionController.text.trim(),
+                              options: optionControllers
+                                  .map(
+                                    (TextEditingController c) => c.text.trim(),
+                                  )
+                                  .toList(),
+                              correctIndex: correctIndex,
+                            );
+                          },
+                        );
+                      },
+                child: submitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
               ),
             ],
           );
         },
       ),
     );
+    if (updated == true && mounted) {
+      await _reload();
+    }
   }
 
   Future<void> _deleteQuizQuestion(QuizQuestion question) async {

@@ -8,6 +8,7 @@ import '../providers/app_state.dart';
 import '../services/auth_service.dart';
 import '../services/progress_service.dart';
 import '../theme.dart';
+import '../utils/edit_flow.dart';
 import '../widgets/animated_gradient_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
@@ -132,26 +133,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
     final AppState appState = context.read<AppState>();
-    final bool ok = await appState.updateProfile(
-      name: _name.text,
-      email: _email.text,
-      phone: _phone.text,
-      address: _address.text,
-      profileImage: _profileImage.text,
-    );
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok ? 'Profile updated' : appState.authError ?? 'Update failed',
-        ),
-      ),
+    await submitEditableForm(
+      context: context,
+      formKey: _formKey,
+      submit: () async {
+        final bool ok = await appState.updateProfile(
+          name: _name.text,
+          email: _email.text,
+          phone: _phone.text,
+          address: _address.text,
+          profileImage: _profileImage.text,
+        );
+        if (!ok) {
+          throw appState.authError ?? 'Update failed';
+        }
+      },
     );
   }
 

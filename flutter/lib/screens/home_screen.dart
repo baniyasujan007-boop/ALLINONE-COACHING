@@ -129,12 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: 'All in One Coaching',
         titleWidget: const _BrandAppBarTitle(),
         actions: <Widget>[
-          UserAvatarButton(
-            user: appState.currentUser,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
-            ),
-          ),
+          UserAvatarButton(user: appState.currentUser, onTap: _openProfile),
         ],
       ),
       body: AnimatedGradientBackground(
@@ -204,13 +199,23 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
           if (idx == 4) {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
-            );
+            _openProfile();
           }
         },
       ),
     );
+  }
+
+  Future<void> _openProfile() async {
+    final bool? updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => const ProfileScreen()),
+    );
+    if (!mounted || updated != true) {
+      return;
+    }
+    final AppState appState = context.read<AppState>();
+    await appState.refreshProfile();
+    await appState.loadCourses(withDetails: true);
   }
 }
 

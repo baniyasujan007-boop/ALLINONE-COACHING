@@ -48,6 +48,9 @@ class AllInOneCoachingApp extends StatelessWidget {
             themeMode: appState.darkMode ? ThemeMode.dark : ThemeMode.light,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            builder: (BuildContext context, Widget? child) {
+              return SafeArea(child: child ?? const SizedBox.shrink());
+            },
             home: const SplashScreen(),
           );
         },
