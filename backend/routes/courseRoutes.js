@@ -47,7 +47,7 @@ router.post(
     body('offer.pricing.quarterly').optional().isFloat({ min: 0 }),
     body('offer.pricing.semiAnnual').optional().isFloat({ min: 0 }),
     body('offer.pricing.yearly').optional().isFloat({ min: 0 }),
-    body('offer.expiresAt').optional().isISO8601(),
+    body('offer.expiresAt').optional({ nullable: true }).isISO8601(),
     body('isLocked')
       .optional()
       .isBoolean()
@@ -88,7 +88,7 @@ router.put(
     body('offer.pricing.quarterly').optional().isFloat({ min: 0 }),
     body('offer.pricing.semiAnnual').optional().isFloat({ min: 0 }),
     body('offer.pricing.yearly').optional().isFloat({ min: 0 }),
-    body('offer.expiresAt').optional().isISO8601(),
+    body('offer.expiresAt').optional({ nullable: true }).isISO8601(),
     body('isLocked')
       .optional()
       .isBoolean()
