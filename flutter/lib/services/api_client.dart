@@ -78,7 +78,7 @@ class ApiClient {
     );
     if (AppConfig.baseUrl.contains('10.0.2.2')) {
       message.write(
-        ' If you are using a physical phone, 10.0.2.2 only works on the Android emulator. Run the app with API_BASE_URL set to your computer LAN IP, for example http://192.168.x.x:5001/api.',
+        ' If you are using a physical phone, 10.0.2.2 only works on the Android emulator. Run the app with API_BASE_URL set to your computer LAN IP, for example https://allinone-coaching.onrender.com',
       );
     } else {
       message.write(

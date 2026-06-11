@@ -4,7 +4,7 @@ class AppConfig {
   // Android emulator should use 10.0.2.2 to reach localhost.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5001/api',
+   defaultValue: 'https://allinone-coaching.onrender.com/api',
   );
 
   static const String googleClientId = String.fromEnvironment(
