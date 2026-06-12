@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
-
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import '../models/course_model.dart';
 import '../providers/app_state.dart';
 import '../services/community_service.dart';
@@ -219,69 +219,125 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeBottomNavigation extends StatelessWidget {
-  const _HomeBottomNavigation({required this.onDestinationSelected});
+// class _HomeBottomNavigation extends StatelessWidget {
+//   const _HomeBottomNavigation({required this.onDestinationSelected});
+
+//   final ValueChanged<int> onDestinationSelected;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return LayoutBuilder(
+//       builder: (BuildContext context, BoxConstraints constraints) {
+//         final bool compact = constraints.maxWidth < 420;
+//         return NavigationBarTheme(
+//           data: NavigationBarThemeData(
+//             height: compact ? 70 : 78,
+//             labelBehavior: compact
+//                 ? NavigationDestinationLabelBehavior.onlyShowSelected
+//                 : NavigationDestinationLabelBehavior.alwaysShow,
+//             labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
+//               Set<WidgetState> states,
+//             ) {
+//               final bool selected = states.contains(WidgetState.selected);
+//               return TextStyle(
+//                 fontSize: compact ? 11 : 12,
+//                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+//               );
+//             }),
+//             iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
+//               Set<WidgetState> states,
+//             ) {
+//               return IconThemeData(size: compact ? 22 : 24);
+//             }),
+//           ),
+//           child: NavigationBar(
+//             selectedIndex: 0,
+//             onDestinationSelected: onDestinationSelected,
+//             destinations: <NavigationDestination>[
+//               const NavigationDestination(
+//                 icon: Icon(Icons.home_rounded),
+//                 label: 'Home',
+//               ),
+//               const NavigationDestination(
+//                 icon: Icon(Icons.quiz_rounded),
+//                 label: 'Quiz',
+//               ),
+//               NavigationDestination(
+//                 icon: const Icon(Icons.forum_outlined),
+//                 label: compact ? 'Chat' : 'Community',
+//               ),
+//               NavigationDestination(
+//                 icon: const Icon(Icons.smart_toy_outlined),
+//                 label: compact ? 'AI' : 'AI Doubts',
+//               ),
+//               const NavigationDestination(
+//                 icon: Icon(Icons.person_rounded),
+//                 label: 'Profile',
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+class _HomeBottomNavigation extends StatefulWidget {
+  const _HomeBottomNavigation({
+    required this.onDestinationSelected,
+  });
 
   final ValueChanged<int> onDestinationSelected;
 
   @override
+  State<_HomeBottomNavigation> createState() =>
+      _HomeBottomNavigationState();
+}
+
+class _HomeBottomNavigationState
+    extends State<_HomeBottomNavigation> {
+  int _currentIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final bool compact = constraints.maxWidth < 420;
-        return NavigationBarTheme(
-          data: NavigationBarThemeData(
-            height: compact ? 70 : 78,
-            labelBehavior: compact
-                ? NavigationDestinationLabelBehavior.onlyShowSelected
-                : NavigationDestinationLabelBehavior.alwaysShow,
-            labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((
-              Set<WidgetState> states,
-            ) {
-              final bool selected = states.contains(WidgetState.selected);
-              return TextStyle(
-                fontSize: compact ? 11 : 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              );
-            }),
-            iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((
-              Set<WidgetState> states,
-            ) {
-              return IconThemeData(size: compact ? 22 : 24);
-            }),
-          ),
-          child: NavigationBar(
-            selectedIndex: 0,
-            onDestinationSelected: onDestinationSelected,
-            destinations: <NavigationDestination>[
-              const NavigationDestination(
-                icon: Icon(Icons.home_rounded),
-                label: 'Home',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.quiz_rounded),
-                label: 'Quiz',
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.forum_outlined),
-                label: compact ? 'Chat' : 'Community',
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.smart_toy_outlined),
-                label: compact ? 'AI' : 'AI Doubts',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_rounded),
-                label: 'Profile',
-              ),
-            ],
-          ),
-        );
+    return SalomonBottomBar(
+      currentIndex: _currentIndex,
+      onTap: (int index) {
+        setState(() {
+          _currentIndex = index;
+        });
+
+        widget.onDestinationSelected(index);
       },
+      items: [
+        SalomonBottomBarItem(
+          icon: const Icon(Icons.home_rounded),
+          title: const Text('Home'),
+          selectedColor: Colors.blue,
+        ),
+        SalomonBottomBarItem(
+          icon: const Icon(Icons.quiz_rounded),
+          title: const Text('Quiz'),
+          selectedColor: Colors.orange,
+        ),
+        SalomonBottomBarItem(
+          icon: const Icon(Icons.forum_outlined),
+          title: const Text('Community'),
+          selectedColor: Colors.green,
+        ),
+        SalomonBottomBarItem(
+          icon: const Icon(Icons.smart_toy_outlined),
+          title: const Text('AI'),
+          selectedColor: Colors.purple,
+        ),
+        SalomonBottomBarItem(
+          icon: const Icon(Icons.person_rounded),
+          title: const Text('Profile'),
+          selectedColor: Colors.red,
+        ),
+      ],
     );
   }
 }
-
 class _BrandAppBarTitle extends StatelessWidget {
   const _BrandAppBarTitle();
 
