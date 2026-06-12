@@ -73,7 +73,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         final List<String> topics = community.topics;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Community')),
+          appBar: AppBar(title: const Text('Forum')),
           body: RefreshIndicator(
             onRefresh: () => context.read<CommunityService>().loadPosts(force: true),
             child: ListView(
@@ -86,7 +86,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Text(
-                          'Ask the community',
+                          'Ask the Forum',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -153,7 +153,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   const Card(
                     child: Padding(
                       padding: EdgeInsets.all(18),
-                      child: Text('No community posts for this topic yet.'),
+                      child: Text('No Forum  posts for this topic yet.'),
                     ),
                   )
                 else

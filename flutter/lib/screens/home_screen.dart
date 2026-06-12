@@ -186,11 +186,13 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
             ).push(MaterialPageRoute<void>(builder: (_) => const QuizScreen()));
           }
-          if (idx == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const CommunityScreen()),
-            );
-          }
+  if (idx == 2) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => const CommunityScreen(),
+    ),
+  );
+}
           if (idx == 3) {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -321,7 +323,7 @@ class _HomeBottomNavigationState
         ),
         SalomonBottomBarItem(
           icon: const Icon(Icons.forum_outlined),
-          title: const Text('Community'),
+          title: const Text('Forum'),
           selectedColor: Colors.green,
         ),
         SalomonBottomBarItem(
