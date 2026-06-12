@@ -33,11 +33,14 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
       final UserRole? role = AuthService.instance.currentSession?.user.role;
+      
       final Widget destination = role == null
           ? const LoginScreen()
           : role == UserRole.admin
           ? const AdminDashboardScreen()
           : const HomeScreen();
+      //const Widget destination = LoginScreen();
+       
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
           pageBuilder: (_, _, _) => destination,

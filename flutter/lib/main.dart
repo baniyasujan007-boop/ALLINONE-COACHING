@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'services/auth_service.dart';
 
 import 'providers/app_state.dart';
-import 'services/auth_service.dart';
 import 'services/community_service.dart';
 import 'services/progress_service.dart';
 import 'screens/splash_screen.dart';
@@ -10,16 +10,34 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   try {
     await AuthService.instance.initializeGoogleSignIn();
   } catch (_) {
     // Let the app boot even if Google sign-in is not configured yet.
   }
-  await AuthService.instance.restoreSession();
-  await ProgressService.instance.restore();
+
+  try {
+    await AuthService.instance.restoreSession()
+        .timeout(const Duration(seconds: 10));
+  } catch (_) {
+    // Continue launching the app even if restore fails
+  }
+
+  try {
+    await ProgressService.instance.restore();
+  } catch (_) {}
+
   final AppState appState = AppState();
-  await appState.restorePreferences();
-  await appState.recordDailyEngagement();
+
+  try {
+    await appState.restorePreferences();
+  } catch (_) {}
+
+  try {
+    await appState.recordDailyEngagement();
+  } catch (_) {}
+
   runApp(AllInOneCoachingApp(appState: appState));
 }
 
