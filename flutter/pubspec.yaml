@@ -50,6 +50,7 @@ dependencies:
   flutter_timezone: ^4.1.1
   timezone: ^0.9.4
   salomon_bottom_bar: ^3.3.2
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:

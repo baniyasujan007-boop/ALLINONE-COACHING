@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
-
+import 'package:google_mobile_ads/google_mobile_ads.dart' hide AppState;
 import 'providers/app_state.dart';
 import 'services/community_service.dart';
 import 'services/progress_service.dart';
@@ -11,18 +11,17 @@ import 'theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Google Mobile Ads
+  await MobileAds.instance.initialize();
+
   try {
     await AuthService.instance.initializeGoogleSignIn();
-  } catch (_) {
-    // Let the app boot even if Google sign-in is not configured yet.
-  }
+  } catch (_) {}
 
   try {
     await AuthService.instance.restoreSession()
         .timeout(const Duration(seconds: 10));
-  } catch (_) {
-    // Continue launching the app even if restore fails
-  }
+  } catch (_) {}
 
   try {
     await ProgressService.instance.restore();

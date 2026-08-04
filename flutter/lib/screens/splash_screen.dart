@@ -77,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
                 Text(
                   'Learn smarter with one modern coaching platform',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.88)),
+                  style: TextStyle(color: const Color.fromARGB(255, 75, 27, 134).withValues(alpha: 0.88)),
                 ),
               ],
             ),

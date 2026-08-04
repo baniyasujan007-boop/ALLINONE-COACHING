@@ -19,6 +19,8 @@ import 'community_screen.dart';
 import 'course_details_screen.dart';
 import 'profile_screen.dart';
 import 'quiz_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' hide AppState;
+import '../services/ad_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,10 +32,28 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  BannerAd? _bannerAd;
+  bool _isBannerLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    _bannerAd = BannerAd(
+      adUnitId: AdService.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isBannerLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          debugPrint('Banner failed: $error');
+        },
+      ),
+    )..load();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final AppState appState = context.read<AppState>();
       final CommunityService communityService = context
@@ -53,11 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+ @override
+void dispose() {
+  _searchController.dispose();
+  _bannerAd?.dispose();
+  super.dispose();
+}
 
   List<CourseItem> _filteredCourses(List<CourseItem> courses) {
     final String query = _searchQuery.trim().toLowerCase();
@@ -186,13 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
             ).push(MaterialPageRoute<void>(builder: (_) => const QuizScreen()));
           }
-  if (idx == 2) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => const CommunityScreen(),
-    ),
-  );
-}
+          if (idx == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const CommunityScreen()),
+            );
+          }
           if (idx == 3) {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -205,6 +224,13 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
       ),
+            bottomSheet: _isBannerLoaded
+    ? SizedBox(
+        height: _bannerAd!.size.height.toDouble(),
+        width: _bannerAd!.size.width.toDouble(),
+        child: AdWidget(ad: _bannerAd!),
+      )
+    : null,
     );
   }
 
@@ -284,19 +310,15 @@ class _HomeScreenState extends State<HomeScreen> {
 //   }
 // }
 class _HomeBottomNavigation extends StatefulWidget {
-  const _HomeBottomNavigation({
-    required this.onDestinationSelected,
-  });
+  const _HomeBottomNavigation({required this.onDestinationSelected});
 
   final ValueChanged<int> onDestinationSelected;
 
   @override
-  State<_HomeBottomNavigation> createState() =>
-      _HomeBottomNavigationState();
+  State<_HomeBottomNavigation> createState() => _HomeBottomNavigationState();
 }
 
-class _HomeBottomNavigationState
-    extends State<_HomeBottomNavigation> {
+class _HomeBottomNavigationState extends State<_HomeBottomNavigation> {
   int _currentIndex = 0;
 
   @override
@@ -340,6 +362,7 @@ class _HomeBottomNavigationState
     );
   }
 }
+
 class _BrandAppBarTitle extends StatelessWidget {
   const _BrandAppBarTitle();
 
@@ -940,6 +963,7 @@ class _CategoryCoursesScreen extends StatelessWidget {
                 );
               },
             ),
+      
     );
   }
 }
