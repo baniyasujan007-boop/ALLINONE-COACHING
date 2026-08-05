@@ -1,5 +1,5 @@
-const express = require('express');
-const { body, param } = require('express-validator');
+const express = require("express");
+const { body, param } = require("express-validator");
 const {
   register,
   login,
@@ -9,15 +9,17 @@ const {
   forgotPassword,
   getUsersForAdmin,
   updateUserByAdmin,
-} = require('../controllers/authController');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
-const { handleValidation } = require('../middleware/validationMiddleware');
+  deleteAccount,
+} = require("../controllers/authController");
+
+const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { handleValidation } = require("../middleware/validationMiddleware");
 
 const router = express.Router();
-const profileImageValidator = body('profileImage')
+const profileImageValidator = body("profileImage")
   .optional()
   .custom((value) => {
-    if (value == null || value === '') {
+    if (value == null || value === "") {
       return true;
     }
     try {
@@ -25,114 +27,128 @@ const profileImageValidator = body('profileImage')
       new URL(value);
       return true;
     } catch (_) {
-      throw new Error('profileImage must be a valid URL');
+      throw new Error("profileImage must be a valid URL");
     }
   });
 
 router.post(
-  '/register',
+  "/register",
   [
-    body('name').trim().notEmpty().withMessage('Name is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password')
+    body("name").trim().notEmpty().withMessage("Name is required"),
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("password")
       .isLength({ min: 8 })
-      .withMessage('Password must be at least 8 characters'),
-    body('role')
+      .withMessage("Password must be at least 8 characters"),
+    body("role")
       .optional()
-      .isIn(['student', 'admin'])
-      .withMessage('Role must be student or admin'),
-    body('phone').optional().isString().isLength({ max: 30 }),
-    body('address').optional().isString().isLength({ max: 300 }),
+      .isIn(["student", "admin"])
+      .withMessage("Role must be student or admin"),
+    body("phone").optional().isString().isLength({ max: 30 }),
+    body("address").optional().isString().isLength({ max: 300 }),
     profileImageValidator,
     handleValidation,
   ],
-  register
+  register,
 );
 router.post(
-  '/login',
+  "/login",
   [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('password').notEmpty().withMessage('Password is required'),
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("password").notEmpty().withMessage("Password is required"),
     handleValidation,
   ],
-  login
+  login,
 );
 router.post(
-  '/google',
+  "/google",
   [
-    body('idToken').optional().isString().withMessage('Google idToken must be a string'),
-    body('accessToken')
+    body("idToken")
       .optional()
       .isString()
-      .withMessage('Google accessToken must be a string'),
+      .withMessage("Google idToken must be a string"),
+    body("accessToken")
+      .optional()
+      .isString()
+      .withMessage("Google accessToken must be a string"),
     body().custom((value) => {
       const hasIdToken =
-        value && typeof value.idToken === 'string' && value.idToken.trim().length > 0;
+        value &&
+        typeof value.idToken === "string" &&
+        value.idToken.trim().length > 0;
       const hasAccessToken =
         value &&
-        typeof value.accessToken === 'string' &&
+        typeof value.accessToken === "string" &&
         value.accessToken.trim().length > 0;
       if (!hasIdToken && !hasAccessToken) {
-        throw new Error('Google idToken or accessToken is required');
+        throw new Error("Google idToken or accessToken is required");
       }
       return true;
     }),
     handleValidation,
   ],
-  googleLogin
+  googleLogin,
 );
-router.get('/me', protect, getProfile);
+router.get("/me", protect, getProfile);
 router.put(
-  '/me',
+  "/me",
   protect,
   [
-    body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-    body('email').optional().isEmail().withMessage('Valid email is required'),
-    body('phone').optional().isString().isLength({ max: 30 }),
-    body('address').optional().isString().isLength({ max: 300 }),
+    body("name")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Name cannot be empty"),
+    body("email").optional().isEmail().withMessage("Valid email is required"),
+    body("phone").optional().isString().isLength({ max: 30 }),
+    body("address").optional().isString().isLength({ max: 300 }),
     profileImageValidator,
     handleValidation,
   ],
-  updateProfile
+  updateProfile,
 );
+router.delete("/me", protect, deleteAccount);
 router.post(
-  '/forgot-password',
+  "/forgot-password",
   [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('newPassword')
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("newPassword")
       .isLength({ min: 8 })
-      .withMessage('New password must be at least 8 characters'),
+      .withMessage("New password must be at least 8 characters"),
     handleValidation,
   ],
-  forgotPassword
+  forgotPassword,
 );
-router.get('/users', protect, adminOnly, getUsersForAdmin);
+router.get("/users", protect, adminOnly, getUsersForAdmin);
 router.put(
-  '/users/:id',
+  "/users/:id",
   protect,
   adminOnly,
   [
-    param('id').isMongoId().withMessage('Invalid user id'),
-    body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-    body('email').optional().isEmail().withMessage('Valid email is required'),
-    body('role')
+    param("id").isMongoId().withMessage("Invalid user id"),
+    body("name")
       .optional()
-      .isIn(['student', 'admin'])
-      .withMessage('Role must be student or admin'),
-    body('phone').optional().isString().isLength({ max: 30 }),
-    body('address').optional().isString().isLength({ max: 300 }),
-    body('enrolledCourseIds')
+      .trim()
+      .notEmpty()
+      .withMessage("Name cannot be empty"),
+    body("email").optional().isEmail().withMessage("Valid email is required"),
+    body("role")
+      .optional()
+      .isIn(["student", "admin"])
+      .withMessage("Role must be student or admin"),
+    body("phone").optional().isString().isLength({ max: 30 }),
+    body("address").optional().isString().isLength({ max: 300 }),
+    body("enrolledCourseIds")
       .optional()
       .isArray()
-      .withMessage('enrolledCourseIds must be an array'),
-    body('enrolledCourseIds.*')
+      .withMessage("enrolledCourseIds must be an array"),
+    body("enrolledCourseIds.*")
       .optional()
       .isMongoId()
-      .withMessage('Each enrolled course id must be valid'),
+      .withMessage("Each enrolled course id must be valid"),
     profileImageValidator,
     handleValidation,
   ],
-  updateUserByAdmin
+  updateUserByAdmin,
 );
 
 module.exports = router;

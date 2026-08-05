@@ -395,4 +395,20 @@ class AuthService {
     }
     return url;
   }
+  Future<String?> deleteAccount() async {
+  try {
+    await ApiClient.instance.delete(
+      "/auth/me",
+      auth: true,
+    );
+
+    await logout();
+
+    return null;
+  } on ApiException catch (e) {
+    return e.message;
+  } catch (_) {
+    return "Failed to delete account.";
+  }
+}
 }

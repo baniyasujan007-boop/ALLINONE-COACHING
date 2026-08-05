@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/legal/legal_header.dart';
 import '../../widgets/legal/legal_section.dart';
+import '../../services/auth_service.dart';
+import '../../screens/login_screen.dart';
 
 /// Instructions for requesting permanent account deletion.
 class AccountDeletionPage extends StatelessWidget {
@@ -89,7 +91,7 @@ class AccountDeletionPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       const Text(
-                        'Email softwarebhatti1@gmail.com with the subject “Account Deletion Request”. Please include the following details so we can verify your identity:',
+                        'Press the Delete My Account button below to permanently remove your account and associated data. This action cannot be undone.',
                       ),
                       const SizedBox(height: 14),
                       const _BulletList(
@@ -101,9 +103,84 @@ class AccountDeletionPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
-                        onPressed: () => _emailSupport(context),
-                        icon: const Icon(Icons.email_outlined),
-                        label: const Text('Email Deletion Request'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 55),
+                        ),
+                        icon: const Icon(Icons.delete_forever),
+                        label: const Text("Delete My Account"),
+                        onPressed: () async {
+                          final bool? confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Delete Account"),
+                              content: const Text(
+                                "This action is permanent.\n\n"
+                                "Your account, profile, learning progress, community posts, quiz scores and other personal data will be permanently deleted.\n\n"
+                                "This action cannot be undone.",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text("Cancel"),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("Delete"),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm != true || !context.mounted) return;
+
+                          // Show loading dialog
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+
+                          // Delete account
+                          final String? error = await AuthService.instance
+                              .deleteAccount();
+
+                          if (!context.mounted) return;
+
+                          // Close loading dialog
+                          Navigator.pop(context);
+
+                          if (error != null) {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(error)));
+                            return;
+                          }
+
+                          // Success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Your account has been deleted successfully.",
+                              ),
+                            ),
+                          );
+
+                          // Go back to login
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
                       ),
                     ],
                   ),

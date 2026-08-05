@@ -604,3 +604,23 @@ exports.updateUserByAdmin = async (req, res, next) => {
     return next(error);
   }
 };
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    await User.findByIdAndDelete(req.user.id);
+
+    return res.json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

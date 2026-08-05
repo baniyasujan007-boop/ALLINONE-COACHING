@@ -15,6 +15,9 @@ import '../widgets/gradient_button.dart';
 import 'engagement_screen.dart';
 import 'login_screen.dart';
 import 'profile_detail_screens.dart';
+import '../pages/legal/privacy_policy_page.dart';
+import '../pages/legal/terms_conditions_page.dart';
+import '../pages/legal/account_deletion_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -326,6 +329,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute<void>(
                   builder: (_) => PaymentHistoryScreen(payments: payments),
                 ),
+              ),
+            ),
+            _tile(
+              context,
+              Icons.privacy_tip_outlined,
+              'Privacy Policy',
+              '',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              ),
+            ),
+
+            _tile(
+              context,
+              Icons.description_outlined,
+              'Terms & Conditions',
+              '',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TermsConditionsPage()),
+              ),
+            ),
+
+            _tile(
+              context,
+              Icons.delete_forever_outlined,
+              'Delete Account',
+              '',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AccountDeletionPage()),
               ),
             ),
             _tile(
