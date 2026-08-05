@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/legal/legal_header.dart';
 import '../../widgets/legal/legal_section.dart';
@@ -11,19 +10,6 @@ class AccountDeletionPage extends StatelessWidget {
   const AccountDeletionPage({super.key});
 
   static const String routeName = '/account-deletion';
-
-  Future<void> _emailSupport(BuildContext context) async {
-    final Uri email = Uri(
-      scheme: 'mailto',
-      path: 'softwarebhatti1@gmail.com',
-      queryParameters: <String, String>{'subject': 'Account Deletion Request'},
-    );
-    if (!await launchUrl(email) && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open your email app.')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
