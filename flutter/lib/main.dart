@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' hide AppState;
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'providers/app_state.dart';
 import 'services/community_service.dart';
 import 'services/progress_service.dart';
 import 'screens/splash_screen.dart';
+import 'pages/legal/account_deletion_page.dart';
+import 'pages/legal/privacy_policy_page.dart';
 import 'theme.dart';
 
 Future<void> main() async {
+  // Uses clean web URLs such as /account-deletion instead of hash URLs.
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Google Mobile Ads
@@ -19,8 +24,9 @@ Future<void> main() async {
   } catch (_) {}
 
   try {
-    await AuthService.instance.restoreSession()
-        .timeout(const Duration(seconds: 10));
+    await AuthService.instance.restoreSession().timeout(
+      const Duration(seconds: 10),
+    );
   } catch (_) {}
 
   try {
@@ -65,6 +71,10 @@ class AllInOneCoachingApp extends StatelessWidget {
             themeMode: appState.darkMode ? ThemeMode.dark : ThemeMode.light,
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
+            routes: <String, WidgetBuilder>{
+              PrivacyPolicyPage.routeName: (_) => const PrivacyPolicyPage(),
+              AccountDeletionPage.routeName: (_) => const AccountDeletionPage(),
+            },
             builder: (BuildContext context, Widget? child) {
               return SafeArea(child: child ?? const SizedBox.shrink());
             },
